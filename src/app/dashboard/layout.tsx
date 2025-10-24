@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Bot, Home, LogOut, Menu, Package, Users } from "lucide-react";
+import { useSwipeable } from 'react-swipeable';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ interface SimulatedUser {
 
 const navLinks = [
   { href: "/dashboard", demoHref: "/dashboarddemo", label: "Dashboard", icon: Home },
-  { href: "/dashboard", demoHref: "/dashboarddemo", label: "Asistentes", icon: Bot },
+  { href: "/dashboard/asistentes", demoHref: "/dashboarddemo/asistentes", label: "Asistentes", icon: Bot },
   { href: "/dashboard/clients", demoHref: "/dashboard/clients", label: "Clientes", icon: Users },
   { href: "/dashboard/credits", demoHref: "/dashboard/credits", label: "Créditos", icon: Package },
 ];
@@ -36,7 +37,7 @@ const MobileBottomNav = () => {
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
             <nav className="grid grid-cols-4 items-center justify-around h-16">
                 {navLinks.map(link => {
-                    const href = isDemo && ['/dashboard', '/dashboard/'].includes(link.href) ? link.demoHref : link.href;
+                    const href = isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href;
                     const isActive = pathname === href;
                     return (
                         <Link key={`${href}-${link.label}-mobile`} href={href} className={`flex flex-col items-center justify-center gap-1 transition-colors h-full ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}>
@@ -60,6 +61,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isDemo = pathname.startsWith('/dashboarddemo');
 
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => handleSwipe(1),
+    onSwipedRight: () => handleSwipe(-1),
+    preventScrollOnSwipe: true,
+    trackMouse: true
+  });
+
+  const handleSwipe = (direction: number) => {
+    const currentPath = pathname;
+    const isDemo = currentPath.startsWith('/dashboarddemo');
+    const relevantLinks = navLinks.map(l => isDemo ? l.demoHref : l.href);
+    const currentIndex = relevantLinks.indexOf(currentPath);
+
+    if (currentIndex !== -1) {
+        const nextIndex = currentIndex + direction;
+        if (nextIndex >= 0 && nextIndex < relevantLinks.length) {
+            router.push(relevantLinks[nextIndex]);
+        }
+    }
+  };
+  
   useEffect(() => {
     // Simulate auth state change
     setLoading(true);
@@ -142,7 +164,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const desktopNavLinks = [
     { href: isDemo ? "/dashboarddemo" : "/dashboard", label: "Dashboard", icon: Home, badge: 0 },
-    { href: isDemo ? "/dashboarddemo" : "/dashboard", label: "Asistentes", icon: Bot, badge: isDemo ? 4 : 3 },
+    { href: isDemo ? "/dashboarddemo/asistentes" : "/dashboard/asistentes", label: "Asistentes", icon: Bot, badge: isDemo ? 4 : 3 },
     { href: "/dashboard/clients", label: "Clientes", icon: Users, badge: 0 },
     { href: "/dashboard/credits", label: "Créditos", icon: Package, badge: 0 },
   ];
@@ -219,7 +241,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40 pb-20 md:pb-6">
+        <main {...swipeHandlers} className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40 pb-20 md:pb-6">
           {children}
         </main>
         <MobileBottomNav />
