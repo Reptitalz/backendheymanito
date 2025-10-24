@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 // Simulated User type
 interface SimulatedUser {
@@ -30,9 +31,11 @@ const navLinks = [
   { href: "/dashboard/credits", demoHref: "/dashboard/credits", label: "Créditos", icon: CreditCard },
 ];
 
-const MobileBottomNav = () => {
+const MobileBottomNav = ({ isCreatePage }: { isCreatePage: boolean }) => {
     const pathname = usePathname();
     const isDemo = pathname.startsWith('/dashboarddemo');
+
+    if (isCreatePage) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
@@ -61,6 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { toast } = useToast();
 
   const isDemo = pathname.startsWith('/dashboarddemo');
+  const isCreatePage = pathname === '/dashboard/asistentes/crear';
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => handleSwipe(1),
@@ -70,6 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   });
 
   const handleSwipe = (direction: number) => {
+    if (isCreatePage) return; // Disable swipe on create page
     const currentPath = pathname;
     const isDemo = currentPath.startsWith('/dashboarddemo');
     const relevantLinks = navLinks.map(l => isDemo && l.demoHref ? l.demoHref : l.href);
@@ -169,6 +174,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     badge: (link.href === '/dashboard/asistentes' ? (isDemo ? 4 : 3) : 0),
   }));
 
+  if (isCreatePage) {
+    return (
+        <div className="flex flex-col min-h-screen bg-secondary/40">
+             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                {children}
+             </main>
+        </div>
+    );
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -250,7 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main {...swipeHandlers} className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40 pb-20 md:pb-6">
           {children}
         </main>
-        <MobileBottomNav />
+        <MobileBottomNav isCreatePage={isCreatePage} />
       </div>
     </div>
   );
