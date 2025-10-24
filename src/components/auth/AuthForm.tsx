@@ -1,8 +1,6 @@
 "use client"
 
 import { usePathname, useRouter } from 'next/navigation'
-import { GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
@@ -21,36 +19,16 @@ const GoogleIcon = () => (
 
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const router = useRouter()
-  const pathname = usePathname();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider()
-    try {
-      await signInWithPopup(auth, provider)
-      router.push('/dashboard')
-    } catch (error) {
-      console.error("Error during Google sign-in:", error)
-      toast({
-        title: "Error de autenticación",
-        description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
-        variant: "destructive",
-      })
-    }
+    // Simulate sign in
+    router.push('/dashboard')
   }
 
   const handleGuestSignIn = async () => {
-    try {
-      await signInAnonymously(auth);
-      router.push('/dashboarddemo');
-    } catch (error) {
-      console.error("Error during anonymous sign-in:", error);
-      toast({
-        title: "Error de autenticación",
-        description: "No se pudo iniciar sesión como invitado. Por favor, inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    }
+    // Simulate guest sign in
+    router.push('/dashboarddemo');
   };
 
   return (

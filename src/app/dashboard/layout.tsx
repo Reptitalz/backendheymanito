@@ -3,8 +3,6 @@ import React, { useEffect, useState } from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Bot, Home, LogOut, Menu, Package, Users } from "lucide-react";
-import { onAuthStateChanged, signInAnonymously, signOut, type User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +13,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 
+// Simulated User type
+interface SimulatedUser {
+  uid: string;
+  isAnonymous: boolean;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+}
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SimulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -26,52 +33,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isDemo = pathname === '/dashboarddemo';
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        if (user.isAnonymous && !isDemo) {
-          router.push('/dashboarddemo');
-        } else if (user.isAnonymous && isDemo) {
-          toast({
-            title: "Modo Demostración",
-            description: "Estás viendo una versión de demostración. Inicia sesión para guardar tu trabajo.",
-          });
-        }
-      } else {
-        try {
-          const userCredential = await signInAnonymously(auth);
-          setUser(userCredential.user);
-          router.push('/dashboarddemo');
-        } catch (error) {
-          console.error("Error during anonymous sign-in:", error);
-          router.push('/login');
-        }
-      }
-      setLoading(false);
-    });
+    // Simulate auth state change
+    setLoading(true);
+    // This logic determines if we should be in a "logged in" or "guest" state
+    // For this simulation, any dashboard access is considered "logged in" in some capacity.
+    // The demo route specifically handles the guest/demo experience.
+    
+    if (isDemo) {
+      // Simulate guest user
+      setUser({
+        uid: 'guest-123',
+        isAnonymous: true,
+        displayName: 'Invitado',
+        email: 'guest@example.com',
+        photoURL: null,
+      });
+      toast({
+        title: "Modo Demostración",
+        description: "Estás viendo una versión de demostración. Inicia sesión para guardar tu trabajo.",
+      });
+    } else {
+       // Simulate a logged-in user for the main dashboard
+       setUser({
+        uid: 'user-123',
+        isAnonymous: false,
+        displayName: 'Demo User',
+        email: 'user@example.com',
+        photoURL: `https://i.pravatar.cc/150?u=demo-user`,
+      });
+    }
+    
+    setLoading(false);
 
-    return () => unsubscribe();
-  }, [router, toast, isDemo]);
+  }, [pathname, toast, isDemo, router]);
 
   const handleSignOut = async () => {
-    await signOut(auth);
+    setUser(null);
     router.push('/');
   };
 
   const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
     if (user?.isAnonymous) return 'G';
+    if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   const getDisplayName = () => {
-    if (user?.isAnonymous) return 'Invitado';
     return user?.displayName;
   };
   
   const getDisplayEmail = () => {
-    if (user?.isAnonymous) return 'Explorando como invitado';
-    return user?.email;
+     if (user?.isAnonymous) return 'Explorando como invitado';
+     return user?.email;
   };
 
   const loadingSkeleton = (
@@ -93,15 +106,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
   );
 
-  if (loading) {
+  if (loading || !user) {
     return loadingSkeleton;
   }
   
-  if (!user) {
-    // Still loading or redirecting, show skeleton.
-    return loadingSkeleton;
-  }
-
   const navLinks = [
     { href: isDemo ? "/dashboarddemo" : "/dashboard", label: "Dashboard", icon: Home, badge: 0 },
     { href: "#", label: "Asistentes", icon: Bot, badge: isDemo ? 4 : 3 },

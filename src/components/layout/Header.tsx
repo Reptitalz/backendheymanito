@@ -2,37 +2,66 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Bot, LogOut } from 'lucide-react'
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 
+// Simulated User type
+interface SimulatedUser {
+  uid: string;
+  isAnonymous: boolean;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+}
+
 export function Header() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SimulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+    // Simulate checking auth state
+    setLoading(true);
+    const isDashboard = pathname.startsWith('/dashboard');
+    if (isDashboard) {
+      const isDemo = pathname.includes('demo');
+      if (isDemo) {
+        setUser({
+          uid: 'guest-123',
+          isAnonymous: true,
+          displayName: 'Invitado',
+          email: 'guest@example.com',
+          photoURL: null,
+        });
+      } else {
+        setUser({
+          uid: 'user-123',
+          isAnonymous: false,
+          displayName: 'Demo User',
+          email: 'user@example.com',
+          photoURL: `https://i.pravatar.cc/150?u=demo-user`,
+        });
+      }
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, [pathname]);
 
   const handleSignOut = async () => {
-    await signOut(auth);
+    setUser(null);
     router.push('/');
   };
 
   const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
     if (user?.isAnonymous) return 'G';
+    if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
   
@@ -78,7 +107,7 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                  <DropdownMenuItem onClick={() => router.push(user.isAnonymous ? '/dashboarddemo' : '/dashboard')}>
                     <Bot className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
