@@ -1,5 +1,6 @@
 
-import { PlusCircle, MoreHorizontal, Bot, MessageSquare, Clock, Sparkles } from "lucide-react";
+
+import { PlusCircle, MoreHorizontal, Bot, MessageSquare, Clock, Sparkles, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -85,11 +86,20 @@ export default function AsistentesPage() {
                     <span>{assistant.messagesUsed} / {MAX_MESSAGES} mensajes</span>
                 </div>
                 <Progress value={(assistant.messagesUsed / MAX_MESSAGES) * 100} className="h-2" />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>Actualizado: {assistant.lastUpdate}</span>
-                    </div>
+                <div className="flex items-center justify-end text-xs text-muted-foreground">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
+                            <Settings className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only">Ajustes</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ajustes del Asistente</DropdownMenuLabel>
+                          <DropdownMenuItem>Definir límite de mensajes</DropdownMenuItem>
+                          <DropdownMenuItem>Configurar horario</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </CardContent>
           </Card>
