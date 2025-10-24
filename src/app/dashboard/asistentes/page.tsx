@@ -1,15 +1,17 @@
+
 import { PlusCircle, MoreHorizontal, Bot, MessageSquare, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
 
 export default function AsistentesPage() {
   const assistants = [
-    { name: "Asistente de Ventas", status: "Activo", creditsUsed: 12.5, lastUpdate: "Hace 2 horas" },
-    { name: "Soporte Técnico Nivel 1", status: "Inactivo", creditsUsed: 5.2, lastUpdate: "Ayer" },
-    { name: "Recordatorios de Citas", status: "Activo", creditsUsed: 34.1, lastUpdate: "Hace 5 minutos" },
+    { name: "Asistente de Ventas", status: "Activo", messagesUsed: 250, lastUpdate: "Hace 2 horas" },
+    { name: "Soporte Técnico Nivel 1", status: "Inactivo", messagesUsed: 520, lastUpdate: "Ayer" },
+    { name: "Recordatorios de Citas", status: "Activo", messagesUsed: 890, lastUpdate: "Hace 5 minutos" },
   ];
 
   const getBadgeVariant = (status: string) => {
@@ -24,6 +26,8 @@ export default function AsistentesPage() {
         return 'outline';
     }
   };
+
+  const MAX_MESSAGES = 1000;
 
   return (
     <>
@@ -75,17 +79,18 @@ export default function AsistentesPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
-            <CardContent className="p-4 md:p-6 pt-0">
-              <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>{assistant.creditsUsed.toFixed(1)}K mensajes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{assistant.lastUpdate}</span>
-                  </div>
-              </div>
+            <CardContent className="p-4 md:p-6 pt-0 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>{assistant.messagesUsed} / {MAX_MESSAGES} mensajes</span>
+                </div>
+                <Progress value={(assistant.messagesUsed / MAX_MESSAGES) * 100} className="h-2" />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Actualizado: {assistant.lastUpdate}</span>
+                    </div>
+                </div>
             </CardContent>
           </Card>
         ))}

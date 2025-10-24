@@ -89,10 +89,12 @@ export default function Dashboard() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <Button size="lg" className="btn-shiny animated-gradient text-white font-bold w-full sm:w-auto">
-                    <span className="btn-shiny-content">
-                        Crear Asistente
-                    </span>
+                <Button asChild size="lg" className="btn-shiny animated-gradient text-white font-bold w-full sm:w-auto">
+                    <Link href="/dashboard/asistentes/crear">
+                        <span className="btn-shiny-content">
+                            Crear Asistente
+                        </span>
+                    </Link>
                 </Button>
             </CardContent>
         </Card>
