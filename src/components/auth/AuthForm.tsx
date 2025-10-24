@@ -1,11 +1,12 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
+import Link from 'next/link'
 
 // A better substitute for the Google icon
 const GoogleIcon = () => (
@@ -37,6 +38,20 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     }
   }
 
+  const handleGuestSignIn = async () => {
+    try {
+      await signInAnonymously(auth);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Error during anonymous sign-in:", error);
+      toast({
+        title: "Error de autenticación",
+        description: "No se pudo iniciar sesión como invitado. Por favor, inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto shadow-xl">
       <CardHeader className="text-center">
@@ -52,6 +67,19 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           <Button onClick={handleGoogleSignIn} variant="outline" className="w-full">
             <GoogleIcon />
             {mode === 'login' ? 'Iniciar sesión con Google' : 'Registrarse con Google'}
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                O continúa con
+              </span>
+            </div>
+          </div>
+          <Button onClick={handleGuestSignIn} variant="secondary" className="w-full">
+            Continuar como Invitado
           </Button>
         </div>
       </CardContent>
