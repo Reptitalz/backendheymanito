@@ -29,7 +29,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">Mis Asistentes</h1>
-          <p className="text-muted-foreground">Gestiona y monitorea tus bots de WhatsApp aquí.</p>
+          <p className="text-sm text-muted-foreground">Gestiona y monitorea tus bots de WhatsApp aquí.</p>
         </div>
         <Button>
           <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />
