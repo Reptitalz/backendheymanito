@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -169,11 +169,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link href="#" className="flex items-center gap-2 text-lg font-semibold font-headline mb-4">
-                  <Bot className="h-6 w-6 text-primary" />
-                  <span>Hey Manito!</span>
-                </Link>
+              <SheetHeader>
+                <SheetTitle>
+                  <Link href="#" className="flex items-center gap-2 text-lg font-semibold font-headline">
+                    <Bot className="h-6 w-6 text-primary" />
+                    <span>Hey Manito!</span>
+                  </Link>
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="grid gap-2 text-lg font-medium mt-4">
                 {navLinks.map(link => (
                   <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${pathname === link.href ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                       <link.icon className="h-5 w-5" />
