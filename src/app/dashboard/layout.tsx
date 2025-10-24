@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {navLinks.map(link => (
-                 <Link key={link.href} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname === link.href ? 'bg-accent text-primary-foreground hover:text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                 <Link key={`${link.href}-${link.label}`} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname === link.href ? 'bg-accent text-primary-foreground hover:text-primary-foreground/80' : 'text-muted-foreground'}`}>
                     <link.icon className="h-4 w-4" />
                     {link.label}
                     {link.badge > 0 && <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">{link.badge}</Badge>}
@@ -175,7 +175,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span>Hey Manito!</span>
                 </Link>
                 {navLinks.map(link => (
-                  <Link key={link.href} href={link.href} className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${pathname === link.href ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${pathname === link.href ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                       <link.icon className="h-5 w-5" />
                       {link.label}
                       {link.badge > 0 && <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">{link.badge}</Badge>}
