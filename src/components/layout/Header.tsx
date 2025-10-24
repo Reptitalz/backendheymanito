@@ -32,8 +32,19 @@ export function Header() {
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
+    if (user?.isAnonymous) return 'G';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+  
+  const getDisplayName = () => {
+    if (user?.isAnonymous) return 'Invitado';
+    return user?.displayName;
+  }
+  
+  const getDisplayEmail = () => {
+    if (user?.isAnonymous) return 'Explorando como invitado';
+    return user?.email;
+  }
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 py-6 px-4 md:px-8">
@@ -55,15 +66,15 @@ export function Header() {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border-2 border-white/50">
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-                      <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                      <AvatarFallback>{getInitials(getDisplayName())}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.displayName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{getDisplayEmail()}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

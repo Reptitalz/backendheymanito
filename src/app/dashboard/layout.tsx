@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Bot, CircleUser, Home, LogOut, Menu, Package, Users } from "lucide-react";
@@ -14,17 +14,25 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
+        if (user.isAnonymous) {
+          toast({
+            title: "Modo Demostración",
+            description: "Estás viendo una versión de demostración. Inicia sesión para guardar tu trabajo.",
+          });
+        }
       } else {
         router.push('/login');
       }
@@ -32,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, toast]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -41,8 +49,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
+    if (user?.isAnonymous) return 'G';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+
+  const getDisplayName = () => {
+    if (user?.isAnonymous) return 'Invitado';
+    return user?.displayName;
+  }
+  
+  const getDisplayEmail = () => {
+    if (user?.isAnonymous) return 'Explorando como invitado';
+    return user?.email;
+  }
 
   if (loading) {
     return (
@@ -171,13 +190,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                  <AvatarFallback>{getInitials(getDisplayName())}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+              <DropdownMenuLabel>{getDisplayName()}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Ajustes</DropdownMenuItem>
               <DropdownMenuItem>Soporte</DropdownMenuItem>
