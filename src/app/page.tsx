@@ -58,8 +58,8 @@ export default function Home() {
       <div className="relative">
         <div className="absolute inset-0 bg-gray-900 overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/30 rounded-full filter blur-3xl opacity-70 animate-blob-1"></div>
-            <div className="absolute -bottom-1/4 -right-1/4 w-2/3 h-2/3 bg-accent/30 rounded-full filter blur-3xl opacity-70 animate-blob-2"></div>
+            <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/50 rounded-full filter blur-3xl opacity-70 animate-blob-1"></div>
+            <div className="absolute -bottom-1/4 -right-1/4 w-2/3 h-2/3 bg-accent/50 rounded-full filter blur-3xl opacity-70 animate-blob-2"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 bg-fuchsia-500/20 rounded-full filter blur-3xl opacity-70 animate-blob-3"></div>
           </div>
         </div>
@@ -81,6 +81,11 @@ export default function Home() {
             </div>
           </section>
         </main>
+        <div className="absolute bottom-0 left-0 right-0 h-20 text-background">
+           <svg viewBox="0 0 500 30" preserveAspectRatio="none" className="w-full h-full">
+            <path className="wavy-line" d="M0,10 C150,40 350,-20 500,10 L500,0 L0,0 Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
       </div>
 
       <section id="features" className="py-20 md:py-32 bg-background">
