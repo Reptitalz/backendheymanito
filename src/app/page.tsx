@@ -56,8 +56,12 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background">
       <div className="relative">
-        <div className="absolute inset-0 bg-gray-900">
-          <div className="absolute inset-0 animated-gradient opacity-20"></div>
+        <div className="absolute inset-0 bg-gray-900 overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/30 rounded-full filter blur-3xl opacity-50 animate-blob-1"></div>
+            <div className="absolute -bottom-1/4 -right-1/4 w-2/3 h-2/3 bg-accent/30 rounded-full filter blur-3xl opacity-50 animate-blob-2"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 bg-fuchsia-500/20 rounded-full filter blur-3xl opacity-50 animate-blob-3"></div>
+          </div>
         </div>
         <Header />
         <main className="relative z-10">
