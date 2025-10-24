@@ -5,11 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function Dashboard() {
+export default function DashboardDemo() {
   const assistants = [
-    { name: "Asistente de Ventas", status: "Activo", creditsUsed: 12.5, lastUpdate: "Hace 2 horas" },
-    { name: "Soporte Técnico Nivel 1", status: "Inactivo", creditsUsed: 5.2, lastUpdate: "Ayer" },
-    { name: "Recordatorios de Citas", status: "Activo", creditsUsed: 34.1, lastUpdate: "Hace 5 minutos" },
+    { name: "Asistente de Ventas (Demo)", status: "Activo", creditsUsed: 12.5, lastUpdate: "Hace 2 horas" },
+    { name: "Soporte Técnico Nivel 1 (Demo)", status: "Inactivo", creditsUsed: 5.2, lastUpdate: "Ayer" },
+    { name: "Recordatorios de Citas (Demo)", status: "Activo", creditsUsed: 34.1, lastUpdate: "Hace 5 minutos" },
+    { name: "Bot de Bienvenida (Demo)", status: "Pausado", creditsUsed: 0.8, lastUpdate: "La semana pasada" },
   ];
 
   const getBadgeVariant = (status: string) => {
@@ -29,8 +30,8 @@ export default function Dashboard() {
     <>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Mis Asistentes</h1>
-          <p className="text-muted-foreground">Gestiona y monitorea tus bots de WhatsApp aquí.</p>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">Mis Asistentes (Modo Demo)</h1>
+          <p className="text-muted-foreground">Esta es una demostración de cómo puedes gestionar tus bots.</p>
         </div>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -42,7 +43,7 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Resumen de Asistentes</CardTitle>
           <CardDescription>
-            Una lista de todos los bots en tu cuenta.
+            Una lista de todos los bots de demostración en tu cuenta.
           </CardDescription>
         </CardHeader>
         <CardContent>

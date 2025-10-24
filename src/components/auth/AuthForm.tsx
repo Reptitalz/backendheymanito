@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ const GoogleIcon = () => (
 
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const router = useRouter()
+  const pathname = usePathname();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
@@ -41,7 +42,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const handleGuestSignIn = async () => {
     try {
       await signInAnonymously(auth);
-      router.push('/dashboard');
+      router.push('/dashboarddemo');
     } catch (error) {
       console.error("Error during anonymous sign-in:", error);
       toast({
@@ -68,19 +69,41 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
             <GoogleIcon />
             {mode === 'login' ? 'Iniciar sesión con Google' : 'Registrarse con Google'}
           </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                O continúa con
-              </span>
-            </div>
-          </div>
-          <Button onClick={handleGuestSignIn} variant="secondary" className="w-full">
-            Continuar como Invitado
-          </Button>
+          
+          {mode === 'login' && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    O
+                  </span>
+                </div>
+              </div>
+              <Button onClick={handleGuestSignIn} variant="secondary" className="w-full">
+                Continuar como Invitado
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="mt-4 text-center text-sm">
+          {mode === 'login' ? (
+            <>
+              ¿No tienes una cuenta?{" "}
+              <Link href="/register" className="underline">
+                Regístrate
+              </Link>
+            </>
+          ) : (
+            <>
+              ¿Ya tienes una cuenta?{" "}
+              <Link href="/login" className="underline">
+                Inicia sesión
+              </Link>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, Bot, CircleUser, Home, LogOut, Menu, Package, Users } from "lucide-react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -21,13 +21,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
+
+  const isDemo = pathname === '/dashboarddemo';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        if (user.isAnonymous) {
+        if (user.isAnonymous && !isDemo) {
+          router.push('/dashboarddemo');
+        } else if (user.isAnonymous && isDemo) {
           toast({
             title: "Modo Demostración",
             description: "Estás viendo una versión de demostración. Inicia sesión para guardar tu trabajo.",
@@ -40,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
 
     return () => unsubscribe();
-  }, [router, toast]);
+  }, [router, toast, isDemo]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -88,6 +93,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return null;
   }
 
+  const navLinks = [
+    { href: isDemo ? "/dashboarddemo" : "/dashboard", label: "Dashboard", icon: Home, badge: 0 },
+    { href: "#", label: "Asistentes", icon: Bot, badge: isDemo ? 4 : 3 },
+    { href: "#", label: "Clientes", icon: Users, badge: 0 },
+    { href: "#", label: "Créditos", icon: Package, badge: 0 },
+  ];
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -104,23 +116,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <Link href="/dashboard" className="flex items-center gap-3 rounded-lg bg-accent px-3 py-2 text-primary-foreground transition-all hover:text-primary-foreground/80">
-                <Home className="h-4 w-4" />
-                Dashboard
-              </Link>
-              <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                <Bot className="h-4 w-4" />
-                Asistentes
-                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">3</Badge>
-              </Link>
-              <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                <Users className="h-4 w-4" />
-                Clientes
-              </Link>
-              <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                <Package className="h-4 w-4" />
-                Créditos
-              </Link>
+              {navLinks.map(link => (
+                 <Link key={link.href} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname === link.href ? 'bg-accent text-primary-foreground hover:text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                    {link.badge > 0 && <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">{link.badge}</Badge>}
+                 </Link>
+              ))}
             </nav>
           </div>
           <div className="mt-auto p-4">
@@ -155,15 +157,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Bot className="h-6 w-6 text-primary" />
                   <span>Hey Manito!</span>
                 </Link>
-                <Link href="/dashboard" className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground">
-                  <Home className="h-5 w-5" />
-                  Dashboard
-                </Link>
-                <Link href="#" className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground">
-                  <Bot className="h-5 w-5" />
-                  Asistentes
-                  <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">3</Badge>
-                </Link>
+                {navLinks.map(link => (
+                  <Link key={link.href} href={link.href} className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 ${pathname === link.href ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                      <link.icon className="h-5 w-5" />
+                      {link.label}
+                      {link.badge > 0 && <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">{link.badge}</Badge>}
+                  </Link>
+                ))}
               </nav>
               <div className="mt-auto">
                 <Card>
