@@ -78,9 +78,12 @@ export function Header() {
   return (
     <header className="absolute top-0 left-0 right-0 z-50 py-6 px-4 md:px-8">
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-white">
+        <Link href="/" className="flex items-center gap-2 text-white -rotate-6">
           <Bot className="h-8 w-8" />
-          <span className="text-xl font-bold font-headline">Hey Manito!</span>
+          <div className="flex flex-col text-xl font-bold font-headline leading-none">
+            <span>Manito!</span>
+            <span>Hey</span>
+          </div>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-white/90">
           <Link href="#features" className="hover:text-white transition-colors">Características</Link>

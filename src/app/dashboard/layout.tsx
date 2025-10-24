@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 // Simulated User type
 interface SimulatedUser {
@@ -164,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const desktopNavLinks = navLinks.map(link => ({
     ...link,
-    href: isDemo ? link.demoHref : link.href,
+    href: isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href,
     badge: (link.href === '/dashboard/asistentes' ? (isDemo ? 4 : 3) : 0),
   }));
 
@@ -173,9 +174,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
+            <Link href="/" className="flex items-center gap-2 font-semibold font-headline -rotate-6">
               <Bot className="h-6 w-6 text-primary" />
-              <span>Hey Manito!</span>
+              <div className="flex flex-col text-lg leading-none">
+                <span>Manito!</span>
+                <span className='text-base'>Hey</span>
+              </div>
             </Link>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
@@ -212,9 +216,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 bg-background z-40 md:justify-end">
-          <Link href="/" className="flex items-center gap-2 font-semibold font-headline md:hidden">
-              <Bot className="h-6 w-6 text-primary" />
-              <span className="text-base">Hey Manito!</span>
+          <Link href="/" className="flex items-center gap-2 font-semibold font-headline md:hidden -rotate-6">
+            <Bot className="h-6 w-6 text-primary" />
+            <div className="flex flex-col text-base leading-none">
+              <span>Manito!</span>
+              <span className='text-sm'>Hey</span>
+            </div>
           </Link>
           <div className="w-full flex-1 md:hidden">
             {/* Can be used for mobile header content */}
