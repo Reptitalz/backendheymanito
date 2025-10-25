@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Check, Fingerprint, Milestone, Sparkles, Wand2, X, Info, Image as ImageIcon, Upload, Phone } from "lucide-react";
+import { ArrowLeft, Check, Fingerprint, Milestone, Sparkles, Wand2, X, Info, Image as ImageIcon, Briefcase, User, Heart, Bot as BotIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Phone } from "lucide-react";
 
 const steps = [
     { name: "Nombre del Asistente", icon: Wand2 },
@@ -19,6 +20,13 @@ const steps = [
     { name: "Personalidad", icon: Fingerprint },
     { name: "Conocimiento", icon: Milestone },
 ];
+
+const personalityOptions = [
+    { id: "sales", title: "Vendedor", description: "Enfocado en ventas y promociones.", icon: Briefcase },
+    { id: "support", title: "Agente de Soporte", description: "Ayuda y resuelve dudas de clientes.", icon: Heart },
+    { id: "personal", title: "Asistente Personal", description: "Organiza y gestiona tareas personales.", icon: User },
+    { id: "custom", title: "Yo Mismo / Personalizado", description: "Configuración manual y avanzada.", icon: BotIcon },
+]
 
 const restrictedWords = ["whatsapp", "meta", "facebook", "oficial", "verified"];
 
@@ -48,6 +56,7 @@ export default function CreateAssistantPage() {
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [assistantImage, setAssistantImage] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [selectedPersonality, setSelectedPersonality] = useState<string | null>(null);
 
     const isNameValid = useMemo(() => assistantName.length > 2 && validationErrors.length === 0, [assistantName, validationErrors]);
 
@@ -80,6 +89,7 @@ export default function CreateAssistantPage() {
         if (stepIndex === 0) return isNameValid;
         if (stepIndex === 1) return assistantImage !== null;
         if (stepIndex === 2) return phoneNumber.length > 8; // Simple validation for now
+        if (stepIndex === 3) return selectedPersonality !== null;
         return false;
     }
 
@@ -279,10 +289,33 @@ export default function CreateAssistantPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Paso 4: Personalidad</CardTitle>
-                                <CardDescription>Define cómo se comportará tu asistente.</CardDescription>
+                                <CardDescription>¿Cuál es el rol principal de tu asistente? Esto nos ayudará a pre-configurarlo.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <p>Aquí configurarás la personalidad de tu bot.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                   {personalityOptions.map((option) => (
+                                       <Card 
+                                         key={option.id}
+                                         className={cn(
+                                            "cursor-pointer hover:border-primary transition-colors",
+                                            selectedPersonality === option.id && "border-primary ring-2 ring-primary"
+                                         )}
+                                         onClick={() => setSelectedPersonality(option.id)}
+                                        >
+                                           <CardHeader className="flex flex-row items-center gap-4">
+                                               <div className="p-2 bg-primary/10 rounded-lg">
+                                                   <option.icon className="h-6 w-6 text-primary" />
+                                               </div>
+                                               <div>
+                                                   <CardTitle className="text-base">{option.title}</CardTitle>
+                                               </div>
+                                           </CardHeader>
+                                           <CardContent>
+                                               <p className="text-sm text-muted-foreground">{option.description}</p>
+                                           </CardContent>
+                                       </Card>
+                                   ))}
+                                </div>
                                  <div className="flex justify-between mt-6">
                                     <Button variant="outline" onClick={() => setCurrentStep(2)}>
                                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -292,10 +325,11 @@ export default function CreateAssistantPage() {
                                         size="lg"
                                         className="btn-shiny animated-gradient text-white font-bold"
                                         onClick={() => setCurrentStep(4)}
+                                        disabled={!isStepComplete(3)}
                                     >
                                         <span className="btn-shiny-content flex items-center">
-                                            Siguiente Paso
-                                            <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />
+                                            Finalizar
+                                            <Check className="ml-2 h-4 w-4" />
                                         </span>
                                     </Button>
                                 </div>
@@ -307,9 +341,3 @@ export default function CreateAssistantPage() {
         </div>
     );
 }
-
-    
-
-    
-
-    
