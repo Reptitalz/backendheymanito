@@ -2,7 +2,7 @@
 
 'use client';
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, Bot, MessageSquare, ArrowLeft, ArrowRight, Sparkles, Settings, ShieldCheck, MessageCircle, Database } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Bot, MessageSquare, ArrowLeft, ArrowRight, Sparkles, Settings, ShieldCheck, MessageCircle, Database, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +15,12 @@ import { Label } from "@/components/ui/label";
 
 export default function AsistentesPage() {
   const allAssistants = [
-    { name: "Asistente de Ventas", status: "Activo", messagesUsed: 250, lastUpdate: "Hace 2 horas", waId: "123456789" },
-    { name: "Soporte Técnico Nivel 1", status: "Inactivo", messagesUsed: 520, lastUpdate: "Ayer", waId: "123456789" },
-    { name: "Recordatorios de Citas", status: "Activo", messagesUsed: 890, lastUpdate: "Hace 5 minutos", waId: "123456789" },
-    { name: "Bot de Bienvenida", status: "Activo", messagesUsed: 150, lastUpdate: "Hace 3 días", waId: "123456789" },
-    { name: "Encuestas de Satisfacción", status: "Pausado", messagesUsed: 300, lastUpdate: "La semana pasada", waId: "123456789" },
-    { name: "Gestor de Pedidos", status: "Activo", messagesUsed: 750, lastUpdate: "Hoy", waId: "123456789" },
+    { name: "Asistente de Ventas", status: "Activo", messagesUsed: 250, lastUpdate: "Hace 2 horas", waId: "123456789", verified: true },
+    { name: "Soporte Técnico Nivel 1", status: "Inactivo", messagesUsed: 520, lastUpdate: "Ayer", waId: "123456789", verified: false },
+    { name: "Recordatorios de Citas", status: "Activo", messagesUsed: 890, lastUpdate: "Hace 5 minutos", waId: "123456789", verified: true },
+    { name: "Bot de Bienvenida", status: "Activo", messagesUsed: 150, lastUpdate: "Hace 3 días", waId: "123456789", verified: false },
+    { name: "Encuestas de Satisfacción", status: "Pausado", messagesUsed: 300, lastUpdate: "La semana pasada", waId: "123456789", verified: false },
+    { name: "Gestor de Pedidos", status: "Activo", messagesUsed: 750, lastUpdate: "Hoy", waId: "123456789", verified: true },
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,7 +72,10 @@ export default function AsistentesPage() {
                     <Bot className="w-6 h-6 text-primary" />
                  </div>
                  <div>
-                    <CardTitle className="text-lg font-semibold">{assistant.name}</CardTitle>
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      {assistant.name}
+                      {assistant.verified && <CheckCircle className="h-5 w-5 text-green-500" />}
+                    </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
                         <Badge variant={getBadgeVariant(assistant.status)} className="py-1 px-2 text-xs">{assistant.status}</Badge>
                     </div>
