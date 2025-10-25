@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 const steps = [
     { name: "Nombre del Asistente", icon: Wand2 },
@@ -241,13 +242,11 @@ export default function CreateAssistantPage() {
                             <CardContent className="space-y-6">
                                  <div className="space-y-2">
                                     <Label htmlFor="phone-number">Número de Teléfono</Label>
-                                    <Input 
-                                      id="phone-number" 
-                                      type="tel"
-                                      placeholder="Ej: +52 55 1234 5678"
-                                      value={phoneNumber}
-                                      onChange={(e) => setPhoneNumber(e.target.value)}
-                                    />
+                                     <PhoneInput
+                                        value={phoneNumber}
+                                        onChange={(phone) => setPhoneNumber(phone)}
+                                        defaultCountry="MX"
+                                      />
                                 </div>
                                 <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
                                     <Info className="h-5 w-5 shrink-0 mt-0.5" />
@@ -308,6 +307,8 @@ export default function CreateAssistantPage() {
         </div>
     );
 }
+
+    
 
     
 

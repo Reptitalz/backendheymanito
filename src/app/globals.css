@@ -1,3 +1,6 @@
+
+@import 'react-international-phone/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -122,3 +125,5 @@
     }
   }
 }
+
+    
