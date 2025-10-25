@@ -118,12 +118,6 @@ export default function AssistantSkillsPage() {
                                 }
                             </CardDescription>
                         </div>
-                        {!isEditing && (
-                             <Button variant="outline" onClick={() => setIsEditing(true)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Cambiar Habilidades
-                            </Button>
-                        )}
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -160,7 +154,7 @@ export default function AssistantSkillsPage() {
                         )
                     )}
                 </CardContent>
-                {isEditing && (
+                {isEditing ? (
                     <CardFooter className="justify-end gap-2">
                         <Button variant="ghost" onClick={handleCancel}>
                             <X className="mr-2 h-4 w-4" />
@@ -169,6 +163,15 @@ export default function AssistantSkillsPage() {
                         <Button onClick={handleSave}>
                             <Save className="mr-2 h-4 w-4" />
                             Guardar Cambios
+                        </Button>
+                    </CardFooter>
+                ) : (
+                    <CardFooter className="justify-center">
+                        <Button size="lg" className="btn-shiny animated-gradient text-white font-bold w-full md:w-auto" onClick={() => setIsEditing(true)}>
+                            <span className="btn-shiny-content flex items-center">
+                                <Edit className="mr-2 h-4 w-4" />
+                                Cambiar Habilidades
+                            </span>
                         </Button>
                     </CardFooter>
                 )}
