@@ -138,6 +138,18 @@ export default function AsistentesPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                       
+                      <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm" asChild>
+                        <Link href={`/dashboard/asistentes/${assistant.id}/habilidades`}>
+                           <Wand2 className="h-3.5 w-3.5" />
+                           <span className="sr-only sm:not-sr-only">Habilidades</span>
+                        </Link>
+                      </Button>
+
+                      <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
+                        <Database className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Base de Datos</span>
+                      </Button>
+                      
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
@@ -152,17 +164,6 @@ export default function AsistentesPage() {
                           </DropdownMenuContent>
                       </DropdownMenu>
 
-                      <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
-                        <Database className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only">Base de Datos</span>
-                      </Button>
-
-                      <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm" asChild>
-                        <Link href={`/dashboard/asistentes/${assistant.id}/habilidades`}>
-                           <Wand2 className="h-3.5 w-3.5" />
-                           <span className="sr-only sm:not-sr-only">Habilidades</span>
-                        </Link>
-                      </Button>
                     </div>
                 </div>
             </CardContent>
