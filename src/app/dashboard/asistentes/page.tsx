@@ -109,7 +109,6 @@ export default function AsistentesPage() {
                             Editar
                          </DropdownMenuItem>
                        </DialogTrigger>
-                      <DropdownMenuItem>Ver Estadísticas</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">
                         Eliminar
                       </DropdownMenuItem>
@@ -327,5 +326,3 @@ export default function AsistentesPage() {
     </>
   );
 }
-
-    
