@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { AnimatedHeadline } from '@/components/layout/AnimatedHeadline'
 
 export default function Home() {
   const plans = [
@@ -69,7 +70,7 @@ export default function Home() {
           <section className="pt-48 pb-32 text-center text-white">
             <div className="container mx-auto px-4">
               <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter font-headline mb-4">
-                Automatiza tu WhatsApp, <br /> Conecta con tus Clientes
+                Automatiza tu <AnimatedHeadline />, <br /> Conecta con tus Clientes
               </h1>
               <p className="text-lg md:text-xl max-w-3xl mx-auto text-white/80 mb-8">
                 Hey Manito! es la plataforma todo-en-uno para crear y gestionar bots de WhatsApp inteligentes. Aumenta tus ventas y mejora tu soporte al cliente sin esfuerzo.
