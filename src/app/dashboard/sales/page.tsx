@@ -2,10 +2,12 @@
 'use client'
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Users, ShieldCheck, ShoppingCart, CreditCard, Image as ImageIcon } from "lucide-react";
+import { usePathname, useRouter } from 'next/navigation';
+import { Users, ShieldCheck, ShoppingCart, CreditCard, Image as ImageIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from '@/lib/utils';
 
 const managementSections = [
     { id: "clients", href: "/dashboard/clients", label: "Clientes", icon: Users },
@@ -15,10 +17,13 @@ const managementSections = [
     { id: "images", href: "/dashboard/images", label: "Imágenes", icon: ImageIcon },
 ];
 
-const PlaceholderContent = ({ section }: { section: { label: string }}) => (
+const PlaceholderContent = ({ section }: { section: { label: string, icon: React.ElementType }}) => (
     <Card>
         <CardHeader>
-            <CardTitle>{section.label}</CardTitle>
+            <div className="flex items-center justify-between">
+                <CardTitle>{section.label}</CardTitle>
+                <section.icon className="h-6 w-6 text-muted-foreground" />
+            </div>
             <CardDescription>Gestiona {section.label.toLowerCase()} desde aquí.</CardDescription>
         </CardHeader>
         <CardContent className="h-96 flex items-center justify-center">
@@ -31,7 +36,12 @@ const PlaceholderContent = ({ section }: { section: { label: string }}) => (
 
 export default function SalesPage() {
     const pathname = usePathname();
+    const router = useRouter();
     const section = managementSections.find(s => s.href === pathname);
+    
+    const handleNavigation = (value: string) => {
+        router.push(value);
+    };
 
     return (
         <>
@@ -42,8 +52,27 @@ export default function SalesPage() {
                 </div>
             </div>
 
+            {/* Mobile navigation */}
+            <div className="md:hidden pt-4">
+                <Select value={pathname} onValueChange={handleNavigation}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccionar sección" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {managementSections.map(navSection => (
+                            <SelectItem key={`mobile-${navSection.id}`} value={navSection.href}>
+                                <div className="flex items-center gap-2">
+                                    <navSection.icon className="h-4 w-4" />
+                                    <span>{navSection.label}</span>
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
             <div className="grid md:grid-cols-4 gap-8 pt-4">
-                <aside className="md:col-span-1">
+                <aside className="hidden md:flex md:col-span-1 flex-col">
                      <nav className="flex flex-col gap-1">
                         {managementSections.map(navSection => (
                             <Button

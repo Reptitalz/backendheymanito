@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Users, ShieldCheck, ShoppingCart, CreditCard, Image as ImageIcon, FilePlus2, MoreHorizontal, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const managementSections = [
     { id: "clients", href: "/dashboard/clients", label: "Clientes", icon: Users },
@@ -121,6 +122,11 @@ const ClientsContent = () => (
 
 export default function GestorPage() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const handleNavigation = (value: string) => {
+        router.push(value);
+    };
 
     return (
         <>
@@ -131,8 +137,27 @@ export default function GestorPage() {
                 </div>
             </div>
 
+            {/* Mobile navigation */}
+            <div className="md:hidden pt-4">
+                <Select value={pathname} onValueChange={handleNavigation}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccionar sección" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {managementSections.map(navSection => (
+                            <SelectItem key={`mobile-${navSection.id}`} value={navSection.href}>
+                                <div className="flex items-center gap-2">
+                                    <navSection.icon className="h-4 w-4" />
+                                    <span>{navSection.label}</span>
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
             <div className="grid md:grid-cols-4 gap-8 pt-4">
-                <aside className="md:col-span-1">
+                <aside className="hidden md:flex md:col-span-1 flex-col">
                      <nav className="flex flex-col gap-1">
                         {managementSections.map(section => (
                             <Button
