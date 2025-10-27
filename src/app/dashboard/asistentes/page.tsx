@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -141,7 +141,7 @@ export default function AsistentesPage() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      
+
                       <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm" asChild>
                         <Link href={`/dashboard/asistentes/${assistant.id}/habilidades`}>
                            <Wand2 className="h-3.5 w-3.5" />
@@ -243,10 +243,10 @@ export default function AsistentesPage() {
                                       </div>
                                   </div>
                               </div>
-                              <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction>Guardar Límite</AlertDialogAction>
-                              </AlertDialogFooter>
+                              <DialogFooter>
+                                  <Button variant="outline">Cancelar</Button>
+                                  <Button>Guardar Límite</Button>
+                              </DialogFooter>
                           </DialogContent>
                       </Dialog>
                     </div>
@@ -281,5 +281,3 @@ export default function AsistentesPage() {
     </>
   );
 }
-
-    
