@@ -2,7 +2,7 @@
 
 'use client';
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, Bot, MessageSquare, ArrowLeft, ArrowRight, Sparkles, Settings, ShieldCheck, MessageCircle, Database, CheckCircle, Wand2, Sheet, BrainCircuit } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Bot, MessageSquare, ArrowLeft, ArrowRight, Sparkles, Settings, ShieldCheck, MessageCircle, Database, CheckCircle, Wand2, Sheet, BrainCircuit, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,19 +13,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 export default function AsistentesPage() {
   const allAssistants = [
-    { id: "asst_1", name: "Asistente de Ventas", status: "Activo", messagesUsed: 250, lastUpdate: "Hace 2 horas", waId: "123456789", verified: true, skills: ["send-messages", "payment-auth", "billing"] },
-    { id: "asst_2", name: "Soporte Técnico Nivel 1", status: "Inactivo", messagesUsed: 520, lastUpdate: "Ayer", waId: "987654321", verified: false, skills: ["receive-calls", "recognize-owner"] },
-    { id: "asst_3", name: "Recordatorios de Citas", status: "Activo", messagesUsed: 890, lastUpdate: "Hace 5 minutos", waId: "112233445", verified: true, skills: ["send-messages"] },
-    { id: "asst_4", name: "Bot de Bienvenida", status: "Activo", messagesUsed: 150, lastUpdate: "Hace 3 días", waId: "223344556", verified: false, skills: ["send-messages", "recognize-owner"] },
-    { id: "asst_5", name: "Encuestas de Satisfacción", status: "Pausado", messagesUsed: 300, lastUpdate: "La semana pasada", waId: "334455667", verified: false, skills: ["send-messages"] },
-    { id: "asst_6", name: "Gestor de Pedidos", status: "Activo", messagesUsed: 750, lastUpdate: "Hoy", waId: "445566778", verified: true, skills: ["payment-auth", "google-sheet"] },
+    { id: "asst_1", name: "Asistente de Ventas", status: "Activo", messagesUsed: 250, lastUpdate: "Hace 2 horas", waId: "123456789", verified: true, skills: ["send-messages", "payment-auth", "billing"], messageLimit: 1000 },
+    { id: "asst_2", name: "Soporte Técnico Nivel 1", status: "Inactivo", messagesUsed: 520, lastUpdate: "Ayer", waId: "987654321", verified: false, skills: ["receive-calls", "recognize-owner"], messageLimit: 1000 },
+    { id: "asst_3", name: "Recordatorios de Citas", status: "Activo", messagesUsed: 890, lastUpdate: "Hace 5 minutos", waId: "112233445", verified: true, skills: ["send-messages"], messageLimit: 1000 },
+    { id: "asst_4", name: "Bot de Bienvenida", status: "Activo", messagesUsed: 150, lastUpdate: "Hace 3 días", waId: "223344556", verified: false, skills: ["send-messages", "recognize-owner"], messageLimit: 1000 },
+    { id: "asst_5", name: "Encuestas de Satisfacción", status: "Pausado", messagesUsed: 300, lastUpdate: "La semana pasada", waId: "334455667", verified: false, skills: ["send-messages"], messageLimit: 5000 },
+    { id: "asst_6", name: "Gestor de Pedidos", status: "Activo", messagesUsed: 750, lastUpdate: "Hoy", waId: "445566778", verified: true, skills: ["payment-auth", "google-sheet"], messageLimit: 2000 },
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
   const ASSISTANTS_PER_PAGE = 3;
+  const [messageLimitValue, setMessageLimitValue] = useState([500]);
 
   const totalPages = Math.ceil(allAssistants.length / ASSISTANTS_PER_PAGE);
   const startIndex = (currentPage - 1) * ASSISTANTS_PER_PAGE;
@@ -44,8 +46,9 @@ export default function AsistentesPage() {
         return 'outline';
     }
   };
-
-  const MAX_MESSAGES = 1000;
+  
+  const TOTAL_CREDITS = 100; // 100k messages
+  const MAX_MESSAGES = TOTAL_CREDITS * 1000;
 
   return (
     <>
@@ -103,9 +106,9 @@ export default function AsistentesPage() {
             <CardContent className="p-4 md:p-6 pt-0 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MessageSquare className="h-4 w-4" />
-                    <span>{assistant.messagesUsed} / {MAX_MESSAGES} mensajes</span>
+                    <span>{assistant.messagesUsed} / {assistant.messageLimit} mensajes</span>
                 </div>
-                <Progress value={(assistant.messagesUsed / MAX_MESSAGES) * 100} className="h-2" />
+                <Progress value={(assistant.messagesUsed / assistant.messageLimit) * 100} className="h-2" />
                 <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                     <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50" asChild>
                        <Link href={`https://wa.me/${assistant.waId}`} target="_blank">
@@ -145,7 +148,7 @@ export default function AsistentesPage() {
                            <span className="sr-only sm:not-sr-only">Habilidades</span>
                         </Link>
                       </Button>
-
+                      
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
@@ -193,20 +196,59 @@ export default function AsistentesPage() {
                           </div>
                         </DialogContent>
                       </Dialog>
-                      
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
-                              <Settings className="h-3.5 w-3.5" />
-                              <span className="sr-only sm:not-sr-only">Ajustes</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ajustes del Asistente</DropdownMenuLabel>
-                            <DropdownMenuItem>Definir límite de mensajes</DropdownMenuItem>
-                            <DropdownMenuItem>Configurar horario</DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
+
+                      <Dialog>
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 gap-1 text-sm">
+                                  <Settings className="h-3.5 w-3.5" />
+                                  <span className="sr-only sm:not-sr-only">Ajustes</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ajustes del Asistente</DropdownMenuLabel>
+                                <DialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                      Definir límite de mensajes
+                                  </DropdownMenuItem>
+                                </DialogTrigger>
+                                <DropdownMenuItem>Configurar horario</DropdownMenuItem>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle>Definir Límite de Mensajes</DialogTitle>
+                                  <DialogDescription>
+                                      Ajusta el número máximo de mensajes que este asistente puede usar. 1 crédito equivale a 1000 mensajes.
+                                  </DialogDescription>
+                              </DialogHeader>
+                              <div className="py-6">
+                                  <div className="space-y-4">
+                                      <div className="flex justify-between items-center">
+                                          <Label htmlFor="message-limit">Límite de Mensajes</Label>
+                                          <span className="text-lg font-bold text-primary">{messageLimitValue[0].toLocaleString()}</span>
+                                      </div>
+                                      <Slider
+                                          id="message-limit"
+                                          min={500}
+                                          max={MAX_MESSAGES}
+                                          step={500}
+                                          value={messageLimitValue}
+                                          onValueChange={setMessageLimitValue}
+                                      />
+                                      <div className="flex justify-between text-xs text-muted-foreground">
+                                          <span>500</span>
+                                          <span>{MAX_MESSAGES.toLocaleString()}</span>
+                                      </div>
+                                  </div>
+                              </div>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction>Guardar Límite</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </DialogContent>
+                      </Dialog>
                     </div>
                 </div>
             </CardContent>
@@ -239,3 +281,5 @@ export default function AsistentesPage() {
     </>
   );
 }
+
+    
