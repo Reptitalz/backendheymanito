@@ -2,6 +2,8 @@
 'use client'
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Users, ShieldCheck, ShoppingCart, CreditCard, Image as ImageIcon, FilePlus2, MoreHorizontal, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +13,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from '@/lib/utils';
 
 const managementSections = [
-    { id: "clients", label: "Clientes", icon: Users },
-    { id: "authorizations", label: "Autorizaciones", icon: ShieldCheck },
-    { id: "sales", label: "Ventas", icon: ShoppingCart },
-    { id: "payments", label: "Pagos", icon: CreditCard },
-    { id: "images", label: "Imágenes", icon: ImageIcon },
+    { id: "clients", href: "/dashboard/clients", label: "Clientes", icon: Users },
+    { id: "authorizations", href: "/dashboard/authorizations", label: "Autorizaciones", icon: ShieldCheck },
+    { id: "sales", href: "/dashboard/sales", label: "Ventas", icon: ShoppingCart },
+    { id: "payments", href: "/dashboard/payments", label: "Pagos", icon: CreditCard },
+    { id: "images", href: "/dashboard/images", label: "Imágenes", icon: ImageIcon },
 ];
 
 const clients = [
@@ -117,32 +119,8 @@ const ClientsContent = () => (
     </Card>
 );
 
-const PlaceholderContent = ({ section }: { section: { label: string }}) => (
-    <Card>
-        <CardHeader>
-            <CardTitle>{section.label}</CardTitle>
-            <CardDescription>Gestiona {section.label.toLowerCase()} desde aquí.</CardDescription>
-        </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-            <div className="text-center">
-                <p className="text-muted-foreground">Contenido de {section.label} próximamente.</p>
-            </div>
-        </CardContent>
-    </Card>
-);
-
 export default function GestorPage() {
-    const [activeSection, setActiveSection] = useState('clients');
-
-    const renderContent = () => {
-        const section = managementSections.find(s => s.id === activeSection);
-        if (!section) return null;
-
-        if (activeSection === 'clients') {
-            return <ClientsContent />;
-        }
-        return <PlaceholderContent section={section} />;
-    };
+    const pathname = usePathname();
 
     return (
         <>
@@ -159,18 +137,20 @@ export default function GestorPage() {
                         {managementSections.map(section => (
                             <Button
                                 key={section.id}
-                                variant={activeSection === section.id ? "secondary" : "ghost"}
+                                variant={pathname === section.href ? "secondary" : "ghost"}
                                 className="justify-start gap-3"
-                                onClick={() => setActiveSection(section.id)}
+                                asChild
                             >
-                                <section.icon className="h-5 w-5" />
-                                <span>{section.label}</span>
+                                <Link href={section.href}>
+                                    <section.icon className="h-5 w-5" />
+                                    <span>{section.label}</span>
+                                </Link>
                             </Button>
                         ))}
                     </nav>
                 </aside>
                 <main className="md:col-span-3">
-                    {renderContent()}
+                    <ClientsContent />
                 </main>
             </div>
         </>
