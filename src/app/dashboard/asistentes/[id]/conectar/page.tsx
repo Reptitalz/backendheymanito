@@ -117,9 +117,9 @@ export default function ConectarPage() {
                                     <device.icon className="h-6 w-6 text-muted-foreground" />
                                     <div>
                                         <p className="font-medium text-sm">{device.name}</p>
-                                        <p className="text-xs text-muted-foreground">
+                                        <div className="text-xs text-muted-foreground">
                                            Última vez activo: <Badge variant={device.lastActive === "Ahora mismo" ? "default" : "secondary"}>{device.lastActive}</Badge>
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
                                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
