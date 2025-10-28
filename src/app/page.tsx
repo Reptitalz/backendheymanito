@@ -11,11 +11,11 @@ import { AnimatedHeadline } from '@/components/layout/AnimatedHeadline'
 export default function Home() {
   const plans = [
     {
-      name: "Manito Básico",
-      price: "$10",
+      name: "Gratuito",
+      price: "$0",
       period: "/mes",
       description: "Ideal para empezar y probar la plataforma.",
-      features: ["1 Crédito (1,000 mensajes)", "1 Bot de WhatsApp", "Soporte básico"],
+      features: ["500 Mensajes/mes", "1 Asistente", "Soporte básico"],
       cta: "Empezar ahora",
     },
     {
@@ -23,7 +23,7 @@ export default function Home() {
       price: "$45",
       period: "/mes",
       description: "Perfecto para negocios en crecimiento.",
-      features: ["5 Créditos (5,000 mensajes)", "Hasta 3 Bots de WhatsApp", "Integraciones API", "Soporte prioritario"],
+      features: ["5,000 Mensajes/mes", "Hasta 3 Asistentes", "Integraciones y API", "Soporte prioritario"],
       cta: "Elegir Pro",
       popular: true,
     },
@@ -32,7 +32,7 @@ export default function Home() {
       price: "A medida",
       period: "",
       description: "Soluciones a medida para grandes volúmenes.",
-      features: ["Créditos personalizados", "Bots ilimitados", "Soporte dedicado 24/7", "Funciones avanzadas"],
+      features: ["Créditos personalizados", "Asistentes ilimitados", "Soporte dedicado 24/7", "Funciones avanzadas"],
       cta: "Contactar Ventas",
     },
   ];
@@ -122,7 +122,7 @@ export default function Home() {
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Planes para todos los tamaños</h2>
             <p className="text-muted-foreground text-lg mb-12">
-              Elige el plan que se ajuste a tus necesidades. 1 crédito = 1000 mensajes.
+              Elige el plan que se ajuste a tus necesidades.
             </p>
           </div>
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-sm mx-auto lg:max-w-none">

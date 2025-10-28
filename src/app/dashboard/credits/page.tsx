@@ -69,10 +69,10 @@ export default function CreditsPage() {
                                             align: "center",
                                             loop: true,
                                         }}
-                                        className="w-full max-w-md"
+                                        className="w-full max-w-4xl"
                                     >
                                         <CarouselContent>
-                                            <CarouselItem className="md:basis-1/2 lg:basis-full">
+                                            <CarouselItem className="sm:basis-1/2 md:basis-1/3">
                                                 <div className="p-1 h-full pt-4">
                                                     <Card className="h-full flex flex-col">
                                                         <CardHeader>
@@ -96,7 +96,7 @@ export default function CreditsPage() {
                                                     </Card>
                                                 </div>
                                             </CarouselItem>
-                                            <CarouselItem className="md:basis-1/2 lg:basis-full">
+                                            <CarouselItem className="sm:basis-1/2 md:basis-1/3">
                                                 <div className="p-1 h-full pt-4">
                                                     <Card className="border-primary border-2 relative shadow-lg h-full flex flex-col">
                                                         <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Recomendado</Badge>
@@ -122,6 +122,30 @@ export default function CreditsPage() {
                                                     </Card>
                                                 </div>
                                             </CarouselItem>
+                                             <CarouselItem className="sm:basis-1/2 md:basis-1/3">
+                                                <div className="p-1 h-full pt-4">
+                                                    <Card className="h-full flex flex-col">
+                                                        <CardHeader>
+                                                            <CardTitle className="font-headline">Manito Empresa</CardTitle>
+                                                            <CardDescription>Soluciones para grandes volúmenes.</CardDescription>
+                                                            <div className="pt-4">
+                                                                <span className="text-4xl font-bold">A medida</span>
+                                                            </div>
+                                                        </CardHeader>
+                                                        <CardContent className="flex-1">
+                                                            <ul className="space-y-3">
+                                                                <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" /><span>Créditos personalizados</span></li>
+                                                                <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" /><span>Asistentes ilimitados</span></li>
+                                                                <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" /><span>Soporte dedicado 24/7</span></li>
+                                                                 <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" /><span>Funciones avanzadas</span></li>
+                                                            </ul>
+                                                        </CardContent>
+                                                        <CardFooter>
+                                                            <Button className="w-full" variant="outline">Contactar Ventas</Button>
+                                                        </CardFooter>
+                                                    </Card>
+                                                </div>
+                                            </CarouselItem>
                                         </CarouselContent>
                                         <CarouselPrevious />
                                         <CarouselNext />
@@ -141,17 +165,16 @@ export default function CreditsPage() {
                     <CardContent className="grid gap-4">
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Plan Actual</span>
-                            <span className="font-semibold">Manito Pro</span>
+                            <span className="font-semibold">Gratuito</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Próximo Pago</span>
-                            <span className="font-semibold">$45.00</span>
+                            <span className="font-semibold">$0.00</span>
                         </div>
                          <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Método de Pago</span>
                             <div className="flex items-center gap-2">
-                                <CreditCard className="h-5 w-5" />
-                                <span className="font-semibold">**** **** **** 4242</span>
+                                <Button variant="outline" size="sm">Añadir Método</Button>
                             </div>
                         </div>
                     </CardContent>
