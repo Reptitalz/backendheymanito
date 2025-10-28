@@ -4,10 +4,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import QRCode from 'qrcode';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Smartphone, Laptop, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+
+const linkedDevices = [
+    { id: 1, name: "Chrome on Mac OS", lastActive: "Ahora mismo", icon: Laptop },
+    { id: 2, name: "iPhone 15 Pro", lastActive: "Hace 2 horas", icon: Smartphone },
+];
 
 export default function ConectarPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,7 +24,6 @@ export default function ConectarPage() {
     const [status, setStatus] = useState<'loading' | 'qr_received' | 'connected' | 'error'>('loading');
 
     useEffect(() => {
-        // Clear any previous QR code on the server when the page loads
         const clearQr = async () => {
              try {
                 await fetch('/api/qr', {
@@ -46,7 +52,7 @@ export default function ConectarPage() {
                         });
                     }
                 } else {
-                     if (status === 'qr_received') { // Only redirect if we previously had a QR
+                     if (status === 'qr_received') { 
                         setStatus('connected');
                         clearInterval(interval);
                         router.push('/dashboard/asistentes');
@@ -56,14 +62,14 @@ export default function ConectarPage() {
                 console.error("Error polling for QR code:", error);
                 setStatus('error');
             }
-        }, 2000); // Poll every 2 seconds
+        }, 2000); 
 
         return () => clearInterval(interval);
     }, [router, status]);
 
     return (
         <div className="flex items-center justify-center">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-lg">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                          <Button variant="outline" size="icon" asChild>
@@ -74,7 +80,7 @@ export default function ConectarPage() {
                         <div>
                             <CardTitle>Conectar Asistente ({assistantId})</CardTitle>
                              <CardDescription>
-                                Escanea el código QR con WhatsApp para vincular.
+                                Escanea el código QR con WhatsApp para vincular un nuevo dispositivo.
                             </CardDescription>
                         </div>
                     </div>
@@ -101,9 +107,30 @@ export default function ConectarPage() {
                         Abre WhatsApp en tu teléfono, ve a `Configuración` {'>'} `Dispositivos vinculados` y escanea el código.
                     </p>
                 </CardContent>
+                <Separator />
+                <CardFooter className="flex flex-col items-start p-6 gap-4">
+                    <h3 className="font-semibold text-base">Dispositivos Vinculados</h3>
+                     <ul className="w-full space-y-3">
+                        {linkedDevices.map(device => (
+                            <li key={device.id} className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <device.icon className="h-6 w-6 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium text-sm">{device.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                           Última vez activo: <Badge variant={device.lastActive === "Ahora mismo" ? "default" : "secondary"}>{device.lastActive}</Badge>
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Desvincular dispositivo</span>
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
+                </CardFooter>
             </Card>
         </div>
     );
 }
-
-    
