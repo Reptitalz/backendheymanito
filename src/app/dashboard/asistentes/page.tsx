@@ -219,12 +219,12 @@ export default function AsistentesPage() {
                           </Link>
                         </Button>
                         <div className="flex items-center gap-2">
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 gap-1 text-sm">
-                              <QrCode className="h-3.5 w-3.5" />
-                              <span className="sr-only sm:not-sr-only">Conectar</span>
-                            </Button>
-                          </DialogTrigger>
+                           <DialogTrigger asChild>
+                             <Button variant="outline" size="sm" className="h-7 gap-1 text-sm">
+                               <QrCode className="h-3.5 w-3.5" />
+                               <span className="sr-only sm:not-sr-only">Conectar</span>
+                             </Button>
+                           </DialogTrigger>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="h-7 gap-1 text-sm">
@@ -425,3 +425,5 @@ export default function AsistentesPage() {
 }
 
     
+
+  
