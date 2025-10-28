@@ -2,7 +2,6 @@
 import { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import makeWASocket from '@whiskeysockets/baileys/WAConnection';
 import pino from 'pino';
-import qrcode from 'qrcode-terminal';
 import axios from 'axios';
 import fs from 'fs/promises';
 import FormData from 'form-data';
@@ -11,6 +10,7 @@ import { fileTypeFromBuffer } from 'file-type';
 
 // --- CONFIGURACIÓN ---
 const NEXTJS_WEBHOOK_URL = 'http://localhost:3000/api/webhook'; // URL de tu webhook en Next.js
+const NEXTJS_QR_URL = 'http://localhost:3000/api/qr'; // URL para enviar el QR
 const SESSION_FILE_PATH = './wa-session';
 // --- FIN CONFIGURACIÓN ---
 
@@ -21,17 +21,23 @@ async function connectToWhatsApp() {
 
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false, // El QR se manejará manualmente
+        printQRInTerminal: false, // Ya no imprimimos en terminal
         logger,
     });
 
     // Manejo de la conexión
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
-            logger.info('Nuevo código QR, por favor escanea.');
-            qrcode.generate(qr, { small: true });
+            logger.info('Nuevo código QR generado. Enviando al frontend...');
+            try {
+                // Enviar QR al frontend
+                await axios.post(NEXTJS_QR_URL, { qr });
+                logger.info('Código QR enviado al frontend exitosamente.');
+            } catch (error) {
+                logger.error('Error enviando el código QR al frontend:', error.message);
+            }
         }
 
         if (connection === 'close') {
@@ -39,9 +45,22 @@ async function connectToWhatsApp() {
             logger.error('Conexión cerrada por:', lastDisconnect.error, ', reconectando:', shouldReconnect);
             if (shouldReconnect) {
                 connectToWhatsApp();
+            } else {
+                 try {
+                    // Limpiar el QR en el frontend cuando la sesión se cierra permanentemente
+                    await axios.post(NEXTJS_QR_URL, { qr: null });
+                } catch (error) {
+                    logger.error('Error limpiando el QR en el frontend:', error.message);
+                }
             }
         } else if (connection === 'open') {
             logger.info('¡Conexión abierta con WhatsApp!');
+             try {
+                // Limpiar el QR en el frontend una vez conectado
+                await axios.post(NEXTJS_QR_URL, { qr: null });
+            } catch (error) {
+                logger.error('Error limpiando el QR en el frontend:', error.message);
+            }
         }
     });
 
