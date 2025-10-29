@@ -38,8 +38,8 @@ export default function CreditsPage() {
         },
         {
           name: "Manito Pro",
-          price: "$45",
-          period: "/mes",
+          price: "$810",
+          period: "MXN/mes",
           description: "Para negocios en crecimiento.",
           features: ["5,000 Mensajes/mes", "3 Asistentes", "Integraciones y API", "Soporte prioritario"],
           cta: "Mejorar a Pro",
