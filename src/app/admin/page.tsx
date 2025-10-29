@@ -1,45 +1,77 @@
 
-import { BrainCircuit, ArrowRight } from "lucide-react";
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Bot } from 'lucide-react';
+import Link from 'next/link';
 
-export default function AdminDashboardPage() {
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const summaryData = {
-    assistants: {
-      active: 3,
-      total: 3,
-      lastActivity: "Ahora mismo"
-    },
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simple mock authentication
+    if (email === 'admin@heymanito.com' && password === 'password') {
+      router.push('/admin/dashboard');
+    } else {
+      setError('Credenciales inválidas. Inténtalo de nuevo.');
+    }
   };
 
   return (
-    <>
-      <div className="flex flex-col items-start gap-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-headline">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Un resumen de las herramientas de administración.</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
+      <div className="absolute top-8">
+        <Link href="/" className="flex items-center gap-2 text-foreground -rotate-6">
+          <Bot className="h-8 w-8 text-primary" />
+          <div className="flex flex-col text-xl font-bold font-headline leading-none">
+            <span>Hey</span>
+            <span>Manito!</span>
+          </div>
+        </Link>
       </div>
-
-      <div className="grid gap-4 md:gap-6 pt-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Monitor del Cerebro</CardTitle>
-            <BrainCircuit className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summaryData.assistants.active} Asistentes</div>
-            <p className="text-xs text-muted-foreground">
-              Última actividad: {summaryData.assistants.lastActivity}
-            </p>
-            <Button asChild size="sm" className="mt-4 w-full">
-              <Link href="/admin/monitor">
-                Ir al Monitor <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline">Acceso de Administrador</CardTitle>
+          <CardDescription>Ingresa tus credenciales para acceder al panel de control.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Correo Electrónico</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@heymanito.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full">
+              Ingresar
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

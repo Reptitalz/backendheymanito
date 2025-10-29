@@ -3,18 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bot, Home, LogOut, Menu, Package, Users, CreditCard, Target, Shield, BrainCircuit } from "lucide-react";
-import { useSwipeable } from 'react-swipeable';
+import { Bell, Bot, Home, LogOut, Menu, Users, BrainCircuit } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 // Simulated User type
 interface SimulatedUser {
@@ -26,53 +21,37 @@ interface SimulatedUser {
 }
 
 const navLinks = [
-  { href: "/admin", label: "Admin Dashboard", icon: Home },
-  { href: "/admin/monitor", label: "Monitor", icon: BrainCircuit, admin: true },
+  { href: "/admin/dashboard", label: "Admin Dashboard", icon: Home },
+  { href: "/admin/monitor", label: "Monitor", icon: BrainCircuit },
 ];
-
-const MobileBottomNav = () => {
-    const pathname = usePathname();
-    
-    return (
-        <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
-            <nav className="grid grid-cols-2 items-center justify-around h-16">
-                {navLinks.map(link => {
-                    const isActive = pathname === link.href;
-                    return (
-                        <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={`flex flex-col items-center justify-center gap-1 transition-colors h-full ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}>
-                            <link.icon className="h-5 w-5" />
-                            <span className="text-xs font-medium">{link.label}</span>
-                        </Link>
-                    )
-                })}
-            </nav>
-        </div>
-    );
-};
-
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SimulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  
+
   useEffect(() => {
     // Simulate auth state change
     setLoading(true);
-    setUser({
-      uid: 'admin-user-123',
-      isAnonymous: false,
-      displayName: 'Admin User',
-      email: 'admin@example.com',
-      photoURL: `https://i.pravatar.cc/150?u=admin-user`,
-    });
+    // For admin, we assume a logged-in state if not on the main admin login page
+    if (pathname !== '/admin') {
+      setUser({
+        uid: 'admin-user-123',
+        isAnonymous: false,
+        displayName: 'Admin User',
+        email: 'admin@example.com',
+        photoURL: `https://i.pravatar.cc/150?u=admin-user`,
+      });
+    } else {
+        setUser(null); // No user on login page
+    }
     setLoading(false);
   }, [pathname]);
 
   const handleSignOut = async () => {
     setUser(null);
-    router.push('/');
+    router.push('/admin');
   };
 
   const getInitials = (name?: string | null) => {
@@ -87,6 +66,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const getDisplayEmail = () => {
      return user?.email;
   };
+  
+  // If we are on the login page, just render the children without the layout
+  if (pathname === '/admin') {
+    return <>{children}</>;
+  }
 
   const loadingSkeleton = (
       <div className="flex min-h-screen w-full flex-col">
@@ -131,7 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {navLinks.map(link => (
-                 <Link key={`${link.href}-${link.label}`} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href)) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}>
+                 <Link key={`${link.href}-${link.label}`} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname.startsWith(link.href) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}>
                     <link.icon className="h-4 w-4" />
                     {link.label}
                  </Link>
@@ -146,46 +130,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 bg-background z-40 md:justify-end">
-          <Link href="/" className="flex items-center gap-2 font-semibold font-headline md:hidden -rotate-6">
-            <Bot className="h-6 w-6 text-primary" />
-            <div className="flex flex-col text-base leading-none">
-              <span>Hey</span>
-              <span className='text-sm'>Manito!</span>
-            </div>
-          </Link>
-          <div className="w-full flex-1 md:hidden">
-             <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="icon">
-                        <Menu className="h-5 w-5" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left">
-                    <SheetHeader>
-                        <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
-                    </SheetHeader>
-                    <nav className="grid gap-6 text-lg font-medium">
-                        <Link href="/" className="flex items-center gap-2 text-lg font-semibold font-headline mb-4 -rotate-6">
-                             <Bot className="h-6 w-6 text-primary" />
-                              <div className="flex flex-col text-lg leading-none">
-                                <span>Hey</span>
-                                <span className='text-base'>Manito!</span>
-                              </div>
-                        </Link>
-                        {navLinks.map(link => (
-                            <Link key={link.href} href={link.href} className={`flex items-center gap-4 px-2.5 ${pathname.startsWith(link.href) ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                                <link.icon className="h-5 w-5" />
-                                {link.label}
-                            </Link>
-                        ))}
-                         <Link href="/dashboard" className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
-                            <Users className="h-5 w-5" />
-                            Client View
-                         </Link>
-                    </nav>
-                </SheetContent>
-            </Sheet>
-          </div>
+          <Sheet>
+              <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                      <Menu className="h-5 w-5" />
+                  </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                  <SheetHeader>
+                      <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
+                  </SheetHeader>
+                  <nav className="grid gap-6 text-lg font-medium">
+                      <Link href="/" className="flex items-center gap-2 text-lg font-semibold font-headline mb-4 -rotate-6">
+                           <Bot className="h-6 w-6 text-primary" />
+                            <div className="flex flex-col text-lg leading-none">
+                              <span>Hey</span>
+                              <span className='text-base'>Manito!</span>
+                            </div>
+                      </Link>
+                      {navLinks.map(link => (
+                          <Link key={link.href} href={link.href} className={`flex items-center gap-4 px-2.5 ${pathname.startsWith(link.href) ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                              <link.icon className="h-5 w-5" />
+                              {link.label}
+                          </Link>
+                      ))}
+                       <Link href="/dashboard" className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
+                          <Users className="h-5 w-5" />
+                          Client View
+                       </Link>
+                  </nav>
+              </SheetContent>
+          </Sheet>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -201,18 +176,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <DropdownMenuLabel>{getDisplayName()}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                <Bot className="mr-2 h-4 w-4" />
-                <span>Dashboard</span>
+                <Users className="mr-2 h-4 w-4" />
+                <span>Client View</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>Cerrar sesión</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar sesión</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40 pb-20 md:pb-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
           {children}
         </main>
-        <MobileBottomNav />
       </div>
     </div>
   );
