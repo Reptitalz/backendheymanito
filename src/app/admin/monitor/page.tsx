@@ -3,12 +3,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, MessageSquare, Mic, AudioLines, BrainCircuit, Check, X, FileText } from 'lucide-react';
+import { Bot, MessageSquare, Mic, AudioLines, BrainCircuit, Check, X, FileText, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from '@/components/ui/input';
 
 type ProcessStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 type ProcessStep = {
@@ -81,6 +82,7 @@ const StatusIcon = ({ status, icon: Icon }: { status: ProcessStatus, icon: React
 
 export default function MonitorPage() {
     const [activities, setActivities] = useState<AssistantActivity[]>(initialAssistants);
+    const [searchTerm, setSearchTerm] = useState('');
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -142,12 +144,17 @@ export default function MonitorPage() {
 
         return () => clearInterval(interval);
     }, []);
+    
+    const filteredActivities = activities.filter(activity =>
+        activity.assistantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        activity.userName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     if (!isClient) return null;
 
     return (
         <div className="flex flex-col h-full">
-            <header className="flex items-center gap-4 mb-6">
+            <header className="flex items-center gap-4 mb-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center gap-3">
                         <BrainCircuit className="h-8 w-8 text-primary" />
@@ -156,10 +163,20 @@ export default function MonitorPage() {
                     <p className="text-muted-foreground text-sm">Visualización en tiempo real de los procesos de la IA.</p>
                 </div>
             </header>
+            
+            <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por nombre de asistente o propietario..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
 
             <div className="flex-1 space-y-6 overflow-y-auto">
                 <AnimatePresence>
-                    {activities.map((activity) => (
+                    {filteredActivities.map((activity) => (
                         <motion.div key={activity.assistantId} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}>
                             <Card>
                                 <CardHeader>
