@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 
-const words = ['WhatsApp', 'Ventas', 'Soporte', 'Bots'];
+const words = ['WhatsApp', 'Bots'];
 const animationDuration = 2500; // ms
 
 export function AnimatedHeadline() {
