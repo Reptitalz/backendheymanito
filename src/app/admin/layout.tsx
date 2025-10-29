@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bot, Home, LogOut, Users, BrainCircuit } from "lucide-react";
+import { Bell, Bot, Home, LogOut, Users, BrainCircuit, Database } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -23,6 +23,7 @@ interface SimulatedUser {
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: Home },
   { href: "/admin/monitor", label: "Monitor", icon: BrainCircuit },
+  { href: "/admin/memory", label: "Memory", icon: Database },
 ];
 
 const MobileBottomNav = () => {
@@ -40,10 +41,6 @@ const MobileBottomNav = () => {
                         </Link>
                     )
                 })}
-                 <Link href="/dashboard" className="flex flex-col items-center justify-center gap-1 transition-colors h-full text-muted-foreground hover:text-primary">
-                    <Users className="h-5 w-5" />
-                    <span className="text-xs font-medium">Client View</span>
-                </Link>
             </nav>
         </div>
     );
@@ -145,10 +142,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {link.label}
                  </Link>
               ))}
-               <Link href="/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                <Users className="h-4 w-4" />
-                <span>Client View</span>
-              </Link>
             </nav>
           </div>
         </div>
