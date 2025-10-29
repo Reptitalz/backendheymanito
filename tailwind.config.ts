@@ -114,9 +114,6 @@ export default {
             '75%': { transform: 'translate(10px, -10px) rotate(180deg)', opacity: '0.5' },
             '100%': { transform: 'translate(0, 0) rotate(360deg)', opacity: '0.4' },
         },
-        blink: {
-          '50%': { opacity: '0' },
-        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -125,7 +122,6 @@ export default {
         shape2: 'shape2 25s infinite linear',
         shape3: 'shape3 30s infinite ease-in-out',
         shape4: 'shape4 22s infinite ease-in-out',
-        blink: 'blink 1s step-end infinite',
       },
     },
   },
