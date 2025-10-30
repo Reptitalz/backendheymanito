@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Check, Fingerprint, Milestone, Sparkles, Wand2, X, Info, Image as ImageIcon, Briefcase, User, Heart, Bot as BotIcon, Phone, PhoneCall, PhoneOutgoing, MessageSquare, UserCheck, CreditCard, Receipt, Sheet } from "lucide-react";
+import { ArrowLeft, Check, Fingerprint, Milestone, Sparkles, Wand2, X, Info, Image as ImageIcon, Briefcase, User, Heart, Bot as BotIcon, Phone, PhoneCall, PhoneOutgoing, MessageSquare, UserCheck, CreditCard, Receipt, Sheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,18 @@ import Image from "next/image";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
-const steps = [
+const baseSteps = [
     { name: "Nombre del Asistente", icon: Wand2 },
     { name: "Imagen de Perfil", icon: ImageIcon },
     { name: "Notificaciones (Opcional)", icon: Phone },
     { name: "Personalidad", icon: Fingerprint },
-    { name: "Habilidades", icon: Milestone },
 ];
+
+const customPromptStep = { name: "Comportamiento", icon: FileText };
+const skillsStep = { name: "Habilidades", icon: Milestone };
+
 
 const personalityOptions = [
     { id: "sales", title: "Vendedor", description: "Enfocado en ventas y promociones.", icon: Briefcase },
@@ -69,9 +73,19 @@ export default function CreateAssistantPage() {
     const [assistantImage, setAssistantImage] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState("");
     const [selectedPersonality, setSelectedPersonality] = useState<string | null>(null);
+    const [customPrompt, setCustomPrompt] = useState("");
     const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
     const isNameValid = useMemo(() => assistantName.length > 2 && validationErrors.length === 0, [assistantName, validationErrors]);
+
+    const steps = useMemo(() => {
+        const newSteps = [...baseSteps];
+        if (selectedPersonality === 'custom') {
+            newSteps.push(customPromptStep);
+        }
+        newSteps.push(skillsStep);
+        return newSteps;
+    }, [selectedPersonality]);
 
     useEffect(() => {
         if (assistantName) {
@@ -111,12 +125,233 @@ export default function CreateAssistantPage() {
     };
 
     const isStepComplete = (stepIndex: number) => {
-        if (stepIndex === 0) return isNameValid;
-        if (stepIndex === 1) return assistantImage !== null;
-        if (stepIndex === 2) return true; // Optional step
-        if (stepIndex === 3) return selectedPersonality !== null;
-        if (stepIndex === 4) return selectedSkills.length > 0;
-        return false;
+        const step = steps[stepIndex];
+        switch (step.name) {
+            case "Nombre del Asistente":
+                return isNameValid;
+            case "Imagen de Perfil":
+                return assistantImage !== null;
+            case "Notificaciones (Opcional)":
+                return true;
+            case "Personalidad":
+                return selectedPersonality !== null;
+            case "Comportamiento":
+                return customPrompt.length > 10; // Require some minimum length for the prompt
+            case "Habilidades":
+                return selectedSkills.length > 0;
+            default:
+                return false;
+        }
+    }
+    
+    const handleNext = () => {
+        if (currentStep < steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+        } else {
+             // Final action
+             console.log("Assistant Created!");
+        }
+    }
+
+    const handlePrev = () => {
+        if (currentStep > 0) {
+            setCurrentStep(currentStep - 1);
+        }
+    }
+    
+    const CurrentStepComponent = () => {
+        const step = steps[currentStep];
+        switch(step.name) {
+            case "Nombre del Asistente":
+                return (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Paso 1: Define el nombre de tu asistente</CardTitle>
+                            <CardDescription>Este será el nombre público de tu bot en WhatsApp. Asegúrate de seguir las políticas de Meta.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="assistant-name">Nombre del Asistente (Display Name)</Label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <Input 
+                                      id="assistant-name" 
+                                      placeholder="Ej: Soporte Hey Manito" 
+                                      value={assistantName}
+                                      onChange={(e) => setAssistantName(e.target.value)}
+                                      className={cn(
+                                        validationErrors.length > 0 ? "border-destructive focus-visible:ring-destructive" :
+                                        assistantName && isNameValid && "border-green-500 focus-visible:ring-green-500"
+                                      )}
+                                    />
+                                    <Button variant="outline" onClick={handleSuggestName}>
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Sugerir nombre
+                                    </Button>
+                                </div>
+                                {validationErrors.length > 0 && (
+                                    <div className="p-3 bg-destructive/10 border-l-4 border-destructive text-destructive-foreground mt-2 rounded-r-md">
+                                        <h4 className="font-semibold flex items-center gap-2 mb-1"><X className="h-5 w-5"/> Nombre no válido</h4>
+                                        <ul className="text-sm list-disc pl-5">
+                                           {validationErrors.map((error, i) => <li key={i}>{error}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                 {isNameValid && (
+                                    <div className="p-3 bg-green-500/10 border-l-4 border-green-500 text-green-700 mt-2 rounded-r-md">
+                                        <h4 className="font-semibold flex items-center gap-2"><Check className="h-5 w-5"/> ¡Nombre válido!</h4>
+                                        <p className="text-sm">Este nombre cumple con las políticas de Meta.</p>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
+                                <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                                <span>
+                                    Meta revisa que el nombre visible (Display Name) cumpla con sus políticas de marca y autenticidad. El nombre debe representar claramente a tu empresa.
+                                </span>
+                            </div>
+
+                        </CardContent>
+                    </Card>
+                );
+            case "Imagen de Perfil":
+                return (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Paso 2: Imagen de Perfil</CardTitle>
+                            <CardDescription>Sube una imagen de perfil para tu asistente. Debe ser cuadrada y de al menos 640x640px.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                                    {assistantImage ? (
+                                        <Image src={assistantImage} alt="Avatar del asistente" width={160} height={160} className="object-cover w-full h-full" />
+                                    ) : (
+                                        <ImageIcon className="w-20 h-20 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <div className="w-full max-w-sm">
+                                    <Label htmlFor="picture" className="sr-only">Elegir archivo</Label>
+                                    <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleImageUpload} />
+                                </div>
+                            </div>
+                            
+                            <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
+                                <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                                <span>
+                                    La imagen de perfil es clave para la identidad de tu marca en WhatsApp. Asegúrate de que sea clara y representativa.
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+             case "Notificaciones (Opcional)":
+                return (
+                    <Card>
+                         <CardHeader>
+                             <CardTitle>Paso 3: Notificaciones al Propietario (Opcional)</CardTitle>
+                             <CardDescription>Ingresa tu número de teléfono si deseas recibir notificaciones importantes del asistente, como errores críticos o solicitudes que requieran tu atención.</CardDescription>
+                         </CardHeader>
+                         <CardContent className="space-y-6">
+                              <div className="space-y-2">
+                                 <Label htmlFor="phone-number">Tu Número de Teléfono</Label>
+                                  <PhoneInput
+                                     value={phoneNumber}
+                                     onChange={(phone) => setPhoneNumber(phone)}
+                                     defaultCountry="MX"
+                                   />
+                             </div>
+                             <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
+                                 <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                                 <span>
+                                     Este paso es completamente opcional. Si no ingresas un número, simplemente no recibirás alertas por WhatsApp.
+                                 </span>
+                             </div>
+                         </CardContent>
+                     </Card>
+                );
+             case "Personalidad":
+                return (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Paso 4: Personalidad</CardTitle>
+                            <CardDescription>¿Cuál es el rol principal de tu asistente? Esto nos ayudará a pre-configurarlo.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                {personalityOptions.map((option) => (
+                                    <Card 
+                                        key={option.id}
+                                        className={cn(
+                                            "cursor-pointer hover:border-primary transition-colors flex flex-col justify-center items-center text-center p-4",
+                                            selectedPersonality === option.id && "border-primary ring-2 ring-primary"
+                                        )}
+                                        onClick={() => setSelectedPersonality(option.id)}
+                                    >
+                                        <div className="flex flex-col items-center gap-2">
+                                            <option.icon className="h-8 w-8 text-primary" />
+                                            <p className="font-semibold text-base">{option.title}</p>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            case "Comportamiento":
+                return (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Paso 5: Comportamiento Personalizado</CardTitle>
+                            <CardDescription>Define el prompt que guiará la personalidad y el comportamiento de tu asistente. Sé lo más detallado posible.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="custom-prompt">Prompt del Sistema</Label>
+                                <Textarea
+                                    id="custom-prompt"
+                                    placeholder="Ej: Eres un asistente virtual amigable y servicial llamado Manito. Tu objetivo principal es ayudar a los usuarios con sus preguntas sobre nuestros productos. Siempre responde en un tono positivo y nunca reveles que eres un bot."
+                                    value={customPrompt}
+                                    onChange={(e) => setCustomPrompt(e.target.value)}
+                                    rows={8}
+                                />
+                                {customPrompt.length > 0 && customPrompt.length <= 10 && (
+                                    <p className="text-sm text-muted-foreground">Sigue escribiendo, un buen prompt tiene más detalle.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            case "Habilidades":
+                return (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Paso {steps.findIndex(s => s.name === "Habilidades") + 1}: Habilidades del Asistente</CardTitle>
+                            <CardDescription>Selecciona hasta 3 habilidades clave para tu bot. Esto definirá sus capacidades principales.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {skillOptions.map((skill) => (
+                                    <div key={skill.id} className="flex items-center space-x-3 bg-muted/50 p-3 rounded-md">
+                                        <Checkbox
+                                            id={skill.id}
+                                            checked={selectedSkills.includes(skill.id)}
+                                            onCheckedChange={() => handleSkillToggle(skill.id)}
+                                            disabled={!selectedSkills.includes(skill.id) && selectedSkills.length >= 3}
+                                        />
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <skill.icon className="h-5 w-5 text-primary" />
+                                            <Label htmlFor={skill.id} className="font-medium cursor-pointer">
+                                                {skill.label}
+                                            </Label>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+        }
     }
 
 
@@ -157,251 +392,30 @@ export default function CreateAssistantPage() {
                 </aside>
 
                 <main className="md:col-span-3">
-                    {currentStep === 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Paso 1: Define el nombre de tu asistente</CardTitle>
-                                <CardDescription>Este será el nombre público de tu bot en WhatsApp. Asegúrate de seguir las políticas de Meta.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="assistant-name">Nombre del Asistente (Display Name)</Label>
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <Input 
-                                          id="assistant-name" 
-                                          placeholder="Ej: Soporte Hey Manito" 
-                                          value={assistantName}
-                                          onChange={(e) => setAssistantName(e.target.value)}
-                                          className={cn(
-                                            validationErrors.length > 0 ? "border-destructive focus-visible:ring-destructive" :
-                                            assistantName && isNameValid && "border-green-500 focus-visible:ring-green-500"
-                                          )}
-                                        />
-                                        <Button variant="outline" onClick={handleSuggestName}>
-                                            <Sparkles className="mr-2 h-4 w-4" />
-                                            Sugerir nombre
-                                        </Button>
-                                    </div>
-                                    {validationErrors.length > 0 && (
-                                        <div className="p-3 bg-destructive/10 border-l-4 border-destructive text-destructive-foreground mt-2 rounded-r-md">
-                                            <h4 className="font-semibold flex items-center gap-2 mb-1"><X className="h-5 w-5"/> Nombre no válido</h4>
-                                            <ul className="text-sm list-disc pl-5">
-                                               {validationErrors.map((error, i) => <li key={i}>{error}</li>)}
-                                            </ul>
-                                        </div>
-                                    )}
-                                     {isNameValid && (
-                                        <div className="p-3 bg-green-500/10 border-l-4 border-green-500 text-green-700 mt-2 rounded-r-md">
-                                            <h4 className="font-semibold flex items-center gap-2"><Check className="h-5 w-5"/> ¡Nombre válido!</h4>
-                                            <p className="text-sm">Este nombre cumple con las políticas de Meta.</p>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
-                                    <Info className="h-5 w-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        Meta revisa que el nombre visible (Display Name) cumpla con sus políticas de marca y autenticidad. El nombre debe representar claramente a tu empresa.
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-end">
-                                     <Button 
-                                        size="lg" 
-                                        className="btn-shiny animated-gradient text-white font-bold"
-                                        disabled={!isNameValid}
-                                        onClick={() => setCurrentStep(1)}
-                                     >
-                                        <span className="btn-shiny-content flex items-center">
-                                            Siguiente Paso
-                                            <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />
-                                        </span>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    {currentStep === 1 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Paso 2: Imagen de Perfil</CardTitle>
-                                <CardDescription>Sube una imagen de perfil para tu asistente. Debe ser cuadrada y de al menos 640x640px.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                                        {assistantImage ? (
-                                            <Image src={assistantImage} alt="Avatar del asistente" width={160} height={160} className="object-cover w-full h-full" />
-                                        ) : (
-                                            <ImageIcon className="w-20 h-20 text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <div className="w-full max-w-sm">
-                                        <Label htmlFor="picture" className="sr-only">Elegir archivo</Label>
-                                        <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleImageUpload} />
-                                    </div>
-                                </div>
-                                
-                                <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
-                                    <Info className="h-5 w-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        La imagen de perfil es clave para la identidad de tu marca en WhatsApp. Asegúrate de que sea clara y representativa.
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <Button variant="outline" onClick={() => setCurrentStep(0)}>
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-                                     <Button 
-                                        size="lg" 
-                                        className="btn-shiny animated-gradient text-white font-bold"
-                                        disabled={!isStepComplete(1)}
-                                        onClick={() => setCurrentStep(2)}
-                                     >
-                                        <span className="btn-shiny-content flex items-center">
-                                            Siguiente Paso
-                                            <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />
-                                        </span>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    {currentStep === 2 && (
-                       <Card>
-                            <CardHeader>
-                                <CardTitle>Paso 3: Notificaciones al Propietario (Opcional)</CardTitle>
-                                <CardDescription>Ingresa tu número de teléfono si deseas recibir notificaciones importantes del asistente, como errores críticos o solicitudes que requieran tu atención.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                 <div className="space-y-2">
-                                    <Label htmlFor="phone-number">Tu Número de Teléfono</Label>
-                                     <PhoneInput
-                                        value={phoneNumber}
-                                        onChange={(phone) => setPhoneNumber(phone)}
-                                        defaultCountry="MX"
-                                      />
-                                </div>
-                                <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
-                                    <Info className="h-5 w-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        Este paso es completamente opcional. Si no ingresas un número, simplemente no recibirás alertas por WhatsApp.
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                    <div className="relative">
+                        <CurrentStepComponent />
+                        <Card className="mt-4">
+                            <CardContent className="pt-6">
+                                <div className="flex justify-between items-center">
+                                    <Button variant="outline" onClick={handlePrev} disabled={currentStep === 0}>
                                         <ArrowLeft className="mr-2 h-4 w-4" />
                                         Anterior
                                     </Button>
                                     <Button
                                         size="lg"
                                         className="btn-shiny animated-gradient text-white font-bold"
-                                        onClick={() => setCurrentStep(3)}
+                                        onClick={handleNext}
+                                        disabled={!isStepComplete(currentStep)}
                                     >
                                         <span className="btn-shiny-content flex items-center">
-                                            {phoneNumber ? 'Siguiente' : 'Omitir y Siguiente'}
-                                            <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />
+                                            {currentStep === steps.length - 1 ? 'Finalizar Creación' : 'Siguiente Paso'}
+                                            {currentStep === steps.length - 1 ? <Check className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />}
                                         </span>
                                     </Button>
                                 </div>
                             </CardContent>
                         </Card>
-                    )}
-                     {currentStep === 3 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Paso 4: Personalidad</CardTitle>
-                                <CardDescription>¿Cuál es el rol principal de tu asistente? Esto nos ayudará a pre-configurarlo.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {personalityOptions.map((option) => (
-                                        <Card 
-                                            key={option.id}
-                                            className={cn(
-                                                "cursor-pointer hover:border-primary transition-colors flex flex-col justify-center items-center text-center p-4",
-                                                selectedPersonality === option.id && "border-primary ring-2 ring-primary"
-                                            )}
-                                            onClick={() => setSelectedPersonality(option.id)}
-                                        >
-                                            <div className="flex flex-col items-center gap-2">
-                                                <option.icon className="h-8 w-8 text-primary" />
-                                                <p className="font-semibold text-base">{option.title}</p>
-                                            </div>
-                                        </Card>
-                                    ))}
-                                </div>
-                                 <div className="flex justify-between mt-6">
-                                    <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        className="btn-shiny animated-gradient text-white font-bold"
-                                        onClick={() => setCurrentStep(4)}
-                                        disabled={!isStepComplete(3)}
-                                    >
-                                        <span className="btn-shiny-content flex items-center">
-                                            Siguiente Paso
-                                            <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />
-                                        </span>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                    {currentStep === 4 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Paso 5: Habilidades del Asistente</CardTitle>
-                                <CardDescription>Selecciona hasta 3 habilidades clave para tu bot. Esto definirá sus capacidades principales.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {skillOptions.map((skill) => (
-                                        <div key={skill.id} className="flex items-center space-x-3 bg-muted/50 p-3 rounded-md">
-                                            <Checkbox
-                                                id={skill.id}
-                                                checked={selectedSkills.includes(skill.id)}
-                                                onCheckedChange={() => handleSkillToggle(skill.id)}
-                                                disabled={!selectedSkills.includes(skill.id) && selectedSkills.length >= 3}
-                                            />
-                                            <div className="flex items-center gap-3 flex-1">
-                                                <skill.icon className="h-5 w-5 text-primary" />
-                                                <Label htmlFor={skill.id} className="font-medium cursor-pointer">
-                                                    {skill.label}
-                                                </Label>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between mt-6">
-                                    <Button variant="outline" onClick={() => setCurrentStep(3)}>
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        className="btn-shiny animated-gradient text-white font-bold"
-                                        onClick={() => {
-                                            // Final action
-                                            console.log("Assistant Created!");
-                                        }}
-                                        disabled={!isStepComplete(4)}
-                                    >
-                                        <span className="btn-shiny-content flex items-center">
-                                            Finalizar Creación
-                                            <Check className="ml-2 h-4 w-4" />
-                                        </span>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    </div>
                 </main>
             </div>
         </div>
