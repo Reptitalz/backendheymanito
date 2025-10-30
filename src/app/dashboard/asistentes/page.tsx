@@ -86,6 +86,9 @@ export default function AsistentesPage() {
                           className="rounded-full border" 
                           data-ai-hint="robot avatar"
                         />
+                        {assistant.status === 'Activo' && (
+                          <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
+                        )}
                     </div>
                     <div>
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -330,3 +333,5 @@ export default function AsistentesPage() {
     </>
   );
 }
+
+    
