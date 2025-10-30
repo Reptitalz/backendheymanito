@@ -30,7 +30,6 @@ const navLinks = [
   { href: "/dashboard/asistentes", demoHref: "/dashboarddemo/asistentes", label: "Asistentes", icon: Bot },
   { href: "/dashboard/clients", demoHref: "/dashboard/clients", label: "Gestor", icon: Target },
   { href: "/dashboard/credits", demoHref: "/dashboard/credits", label: "Créditos", icon: CreditCard },
-  { href: "/admin/monitor", demoHref: "/admin/monitor", label: "Monitor", icon: BrainCircuit, admin: true },
 ];
 
 const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
