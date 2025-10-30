@@ -88,11 +88,11 @@ export function SkillsCarousel() {
           {skills.concat(skills).map((skill, index) => (
             <CarouselItem key={index} className="basis-auto pl-4">
               <div className="p-1">
-                <Card className="w-[280px] h-[160px] flex flex-col justify-center shadow-md hover:shadow-xl transition-shadow">
+                <Card className="w-[240px] h-[140px] flex flex-col justify-center shadow-md hover:shadow-xl transition-shadow">
                   <CardContent className="flex items-center gap-4 p-6">
                     {skill.icon}
                     <div className='flex-1'>
-                      <h3 className="font-semibold text-lg">{skill.title}</h3>
+                      <h3 className="font-semibold text-base">{skill.title}</h3>
                       <p className="text-sm text-muted-foreground">{skill.description}</p>
                     </div>
                   </CardContent>
