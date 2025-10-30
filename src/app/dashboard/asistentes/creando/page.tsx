@@ -120,7 +120,7 @@ export default function CreatingAssistantPage() {
                                         <Check className="h-10 w-10 text-green-600" />
                                     </motion.div>
                                     <h2 className="text-lg font-bold font-headline mb-2">¡Asistente Creado!</h2>
-                                    <p className="text-muted-foreground text-sm mb-6">
+                                    <p className="text-muted-foreground text-xs mb-6">
                                         Tu nuevo asistente está en la bandeja. El siguiente paso es conectarlo a WhatsApp escaneando el código QR.
                                     </p>
                                     <Button asChild size="lg" className="w-full">
