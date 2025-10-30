@@ -38,7 +38,7 @@
 }
 
 .wavy-line {
-  animation: wave 12s linear infinite alternate;
+  animation: wave 20s linear infinite alternate;
 }
 
 @layer base {
@@ -153,6 +153,6 @@
   }
   
   .animate-bounce {
-    animation: bounce 1.5s infinite;
+    animation: bounce 2.5s infinite;
   }
 }
