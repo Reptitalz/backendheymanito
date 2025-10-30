@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -376,7 +377,7 @@ export default function CreateAssistantPage() {
                 </div>
             </header>
             
-            <div className="grid md:grid-cols-4 gap-8 flex-1">
+            <div className="grid md:grid-cols-4 gap-8 flex-1 pb-24"> {/* Added padding-bottom */}
                 <aside className="hidden md:flex flex-col gap-2">
                     <nav className="flex flex-col gap-1">
                         {steps.map((step, index) => (
@@ -398,34 +399,34 @@ export default function CreateAssistantPage() {
                 </aside>
 
                 <main className="md:col-span-3">
-                    <div className="relative">
-                        <CurrentStepComponent />
-                        <Card className="mt-4">
-                            <CardContent className="pt-6">
-                                <div className="flex justify-between items-center">
-                                    <Button variant="outline" onClick={handlePrev} disabled={currentStep === 0}>
-                                        <ArrowLeft className="mr-2 h-4 w-4" />
-                                        Anterior
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        className="btn-shiny animated-gradient text-white font-bold"
-                                        onClick={handleNext}
-                                        disabled={!isStepComplete(currentStep)}
-                                    >
-                                        <span className="btn-shiny-content flex items-center">
-                                            {currentStep === steps.length - 1 ? 'Finalizar Creación' : 'Siguiente Paso'}
-                                            {currentStep === steps.length - 1 ? <Check className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />}
-                                        </span>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <CurrentStepComponent />
                 </main>
+            </div>
+
+            {/* Sticky Navigation Footer */}
+            <div className="fixed bottom-0 left-0 right-0 md:left-[280px] z-10">
+                <Card className="rounded-none md:rounded-t-lg border-t md:border-x">
+                    <CardContent className="pt-6">
+                        <div className="flex justify-between items-center">
+                            <Button variant="outline" onClick={handlePrev} disabled={currentStep === 0}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Anterior
+                            </Button>
+                            <Button
+                                size="lg"
+                                className="btn-shiny animated-gradient text-white font-bold"
+                                onClick={handleNext}
+                                disabled={!isStepComplete(currentStep)}
+                            >
+                                <span className="btn-shiny-content flex items-center">
+                                    {currentStep === steps.length - 1 ? 'Finalizar Creación' : 'Siguiente Paso'}
+                                    {currentStep === steps.length - 1 ? <Check className="ml-2 h-4 w-4" /> : <ArrowLeft className="ml-2 h-4 w-4 transform rotate-180" />}
+                                </span>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
 }
-
-    
