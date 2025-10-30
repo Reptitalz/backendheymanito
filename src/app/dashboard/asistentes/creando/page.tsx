@@ -48,11 +48,11 @@ export default function CreatingAssistantPage() {
                 transition={{ duration: 0.5 }}
             >
                 <Bot className="h-16 w-16 mb-4 animate-bounce" />
-                <h1 className="text-3xl font-bold font-headline mb-2 flex items-center gap-3">
+                <h1 className="text-2xl font-bold font-headline mb-2 flex items-center gap-3">
                     Generando Bot
-                    <Sparkles className="h-7 w-7 animate-ping" />
+                    <Sparkles className="h-6 w-6 animate-ping" />
                 </h1>
-                <p className="text-lg text-white/80">
+                <p className="text-base text-white/80">
                     Estamos configurando tu nuevo asistente. ¡Espera un momento!
                 </p>
                 <div className="w-48 h-2 bg-white/20 rounded-full mt-8 overflow-hidden">
