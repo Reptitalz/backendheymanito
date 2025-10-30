@@ -52,7 +52,7 @@ export default function AuthLayout({
             <div className="grid grid-cols-1 gap-6 text-left">
                 {features.map((feature) => (
                     <div key={feature.title} className="flex items-start gap-4 p-4 bg-white/10 rounded-lg backdrop-blur-sm">
-                        <feature.icon className="h-8 w-8 text-accent shrink-0 mt-1" />
+                        <feature.icon className="h-8 w-8 text-white shrink-0 mt-1" />
                         <div>
                             <h3 className="font-semibold">{feature.title}</h3>
                             <p className="text-sm text-white/70">{feature.description}</p>
