@@ -38,7 +38,7 @@
 }
 
 .wavy-line {
-  animation: wave 20s linear infinite alternate;
+  animation: wave 30s linear infinite alternate;
 }
 
 @layer base {

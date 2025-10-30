@@ -1,46 +1,139 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function CreatingAssistantPage() {
     const router = useRouter();
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [progress, setProgress] = useState(0);
+    const [displayText, setDisplayText] = useState("Inicializando...");
+
+    // Animation settings
+    const waveAmplitude = 10;
+    const waveFrequency = 0.01;
+    const waveSpeed = 0.05;
+    const waterColor = "hsl(var(--primary) / 0.7)";
 
     useEffect(() => {
-        // Simulate bot creation progress
-        const interval = setInterval(() => {
+        const statuses = [
+            { p: 0, text: "Inicializando motor IA..." },
+            { p: 25, text: "Configurando personalidad del bot..." },
+            { p: 50, text: "Asignando habilidades..." },
+            { p: 75, text: "Realizando pruebas finales..." },
+            { p: 100, text: "¡Listo para la acción!" },
+        ];
+
+        const progressInterval = setInterval(() => {
             setProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    // Add a short delay before redirecting
+                const newProgress = prev + 0.5;
+                if (newProgress >= 100) {
+                    clearInterval(progressInterval);
                     setTimeout(() => {
                         router.push('/dashboard/asistentes');
-                    }, 500);
+                    }, 1000);
                     return 100;
                 }
-                return prev + 1;
-            });
-        }, 40); // Controls the speed of the animation
 
-        return () => clearInterval(interval);
+                const currentStatus = statuses.find((s, i) => {
+                    const nextStatus = statuses[i + 1];
+                    return newProgress >= s.p && (!nextStatus || newProgress < nextStatus.p);
+                });
+                if (currentStatus) {
+                    setDisplayText(currentStatus.text);
+                }
+
+                return newProgress;
+            });
+        }, 50); // Adjust speed of progress
+
+        return () => clearInterval(progressInterval);
     }, [router]);
+
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let waveOffset = 0;
+        let animationFrameId: number;
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+
+        const draw = () => {
+            const CW = canvas.width;
+            const CH = canvas.height;
+
+            // 1. Clear the Canvas
+            ctx.clearRect(0, 0, CW, CH);
+
+            // 2. Draw the Water
+            const waterHeight = CH * (progress / 100);
+            const waterY = CH - waterHeight;
+
+            // Create a gradient for the water
+            const gradient = ctx.createLinearGradient(0, waterY, 0, CH);
+            gradient.addColorStop(0, "hsl(var(--primary) / 0.8)");
+            gradient.addColorStop(0.5, "hsl(var(--accent) / 0.6)");
+            gradient.addColorStop(1, "hsl(var(--primary) / 0.8)");
+            
+            ctx.beginPath();
+            ctx.moveTo(0, CH);
+            ctx.lineTo(0, waterY);
+
+            for (let x = 0; x <= CW; x += 1) {
+                const y = waterY + waveAmplitude * Math.sin(x * waveFrequency + waveOffset);
+                ctx.lineTo(x, y);
+            }
+
+            ctx.lineTo(CW, CH);
+            ctx.closePath();
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw a second, slightly offset wave for depth
+            ctx.beginPath();
+             ctx.moveTo(0, CH);
+            ctx.lineTo(0, waterY);
+            for (let x = 0; x <= CW; x += 1) {
+                const y = waterY + (waveAmplitude * 1.2) * Math.sin(x * (waveFrequency * 0.8) + waveOffset + 2);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(CW, CH);
+            ctx.closePath();
+            
+            ctx.fillStyle = "hsl(var(--primary) / 0.3)";
+            ctx.fill();
+
+            waveOffset += waveSpeed;
+            animationFrameId = requestAnimationFrame(draw);
+        };
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        draw();
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [progress]);
 
     return (
         <>
-            {/* Animated Shapes Background */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute -top-1/2 -left-1/2 w-96 h-96 bg-primary/30 rounded-full filter blur-3xl opacity-50 animate-shape1"></div>
-                <div className="absolute -bottom-1/2 -right-1/4 w-96 h-96 bg-accent/30 rounded-full filter blur-3xl opacity-50 animate-shape2"></div>
-                <div className="absolute top-1/4 left-1/3 w-80 h-80 bg-fuchsia-500/20 rounded-full filter blur-2xl opacity-40 animate-shape3"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-indigo-500/20 rounded-lg filter blur-2xl opacity-40 animate-shape4"></div>
-                 <div className="absolute inset-0 bg-black/30"></div>
-            </div>
-
-            {/* Content */}
+            <canvas ref={canvasRef} className="absolute inset-0 z-0 w-full h-full bg-gray-900"></canvas>
+            
             <motion.div
                 className="relative z-10 flex flex-col items-center"
                 initial={{ opacity: 0, y: 20 }}
@@ -52,8 +145,8 @@ export default function CreatingAssistantPage() {
                     Generando Bot
                     <Sparkles className="h-6 w-6 animate-ping" />
                 </h1>
-                <p className="text-base text-white/80">
-                    Estamos configurando tu nuevo asistente. ¡Espera un momento!
+                <p className="text-base text-white/80 transition-opacity duration-300">
+                    {displayText}
                 </p>
                 <div className="w-48 h-2 bg-white/20 rounded-full mt-8 overflow-hidden">
                      <div
@@ -64,9 +157,8 @@ export default function CreatingAssistantPage() {
                         }}
                     ></div>
                 </div>
+                 <p className="text-2xl font-bold mt-4 font-mono">{Math.round(progress)}%</p>
             </motion.div>
         </>
     );
 }
-
-    
