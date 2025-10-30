@@ -24,7 +24,7 @@ export function AnimatedHeadline() {
         style={{ transform: `translateY(-${wordIndex * 50}%)` }}
       >
         {words.map((word) => (
-          <span key={word} className="flex items-center justify-center h-12 md:h-16 bg-gradient-to-r from-accent to-primary text-transparent bg-clip-text">
+          <span key={word} className="flex items-center justify-center h-12 md:h-16 text-[#25D366]">
             {word}
           </span>
         ))}
