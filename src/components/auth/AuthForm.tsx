@@ -47,24 +47,6 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
             <GoogleIcon />
             {mode === 'login' ? 'Iniciar sesión con Google' : 'Registrarse con Google'}
           </Button>
-          
-          {mode === 'login' && (
-            <>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    O
-                  </span>
-                </div>
-              </div>
-              <Button onClick={handleGuestSignIn} variant="secondary" className="w-full">
-                Continuar como Invitado
-              </Button>
-            </>
-          )}
         </div>
         <div className="mt-4 text-center text-sm">
           {mode === 'login' ? (
