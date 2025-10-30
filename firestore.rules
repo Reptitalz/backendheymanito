@@ -1,0 +1,126 @@
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user-specific data and allows public read access to subscription plans.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles, accessible only by the user themselves.
+ * - /plans/{planId}: Stores subscription plans, publicly readable.
+ * - /users/{userId}/subscriptions/{subscriptionId}: Stores user subscriptions, accessible only by the user themselves.
+ * - /users/{userId}/assistants/{assistantId}: Stores assistants, accessible only by the user themselves.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed.
+ * - Public read access is granted to the /plans collection.
+ * - Path-based ownership is enforced for user-specific data.
+ * - Data validation is relaxed to allow for rapid prototyping, focusing on authorization and relationship integrity.
+ *
+ * Denormalization for Authorization:
+ * - The data structure uses path-based ownership to avoid costly `get()` calls in security rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Enforces user-ownership for user profiles. Only the authenticated user can read, update, or delete their own profile.
+     * @path /users/{userId}
+     * @allow (create) - User with UID 'user_abc' can create their profile at /users/user_abc if request.auth.uid == 'user_abc'.
+     * @allow (get, update, delete) - User with UID 'user_abc' can get, update, or delete their profile at /users/user_abc if request.auth.uid == 'user_abc'.
+     * @deny (create) - User with UID 'user_xyz' cannot create a profile at /users/user_abc.
+     * @deny (get, update, delete) - User with UID 'user_xyz' cannot get, update, or delete the profile at /users/user_abc.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // User listing is disallowed.
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows public read access to subscription plans.
+     * @path /plans/{planId}
+     * @allow (get, list) - Any user, signed in or not, can read the plan.
+     * @deny (create, update, delete) - No one can create, update, or delete plans through client-side rules.  These should be managed via a backend admin process.
+     * @principle Allows public read access with restricted write access.
+     */
+    match /plans/{planId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Enforces user-ownership for subscriptions. Only the authenticated user can read, create, update, or delete their own subscriptions.
+     * @path /users/{userId}/subscriptions/{subscriptionId}
+     * @allow (create) - User 'user_abc' can create a subscription at /users/user_abc/subscriptions/sub_123 if request.auth.uid == 'user_abc'.
+     * @allow (get, update, delete) - User 'user_abc' can get, update, or delete their subscription at /users/user_abc/subscriptions/sub_123 if request.auth.uid == 'user_abc'.
+     * @deny (create) - User 'user_xyz' cannot create a subscription at /users/user_abc/subscriptions/sub_123.
+     * @deny (get, update, delete) - User 'user_xyz' cannot get, update, or delete the subscription at /users/user_abc/subscriptions/sub_123.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/subscriptions/{subscriptionId} {
+        function isSignedIn() {
+          return request.auth != null;
+        }
+
+        function isOwner(userId) {
+          return request.auth.uid == userId;
+        }
+
+        function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+        }
+
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Enforces user-ownership for assistants. Only the authenticated user can read, create, update, or delete their own assistants.
+     * @path /users/{userId}/assistants/{assistantId}
+     * @allow (create) - User 'user_abc' can create an assistant at /users/user_abc/assistants/assist_123 if request.auth.uid == 'user_abc'.
+     * @allow (get, update, delete) - User 'user_abc' can get, update, or delete their assistant at /users/user_abc/assistants/assist_123 if request.auth.uid == 'user_abc'.
+     * @deny (create) - User 'user_xyz' cannot create an assistant at /users/user_abc/assistants/assist_123.
+     * @deny (get, update, delete) - User 'user_xyz' cannot get, update, or delete the assistant at /users/user_abc/assistants/assist_123.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/assistants/{assistantId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

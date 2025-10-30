@@ -1,0 +1,242 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Hey Manito! application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "firebaseUid": {
+          "type": "string",
+          "description": "The Firebase UID associated with the user's authentication."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's name."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firebaseUid",
+        "email",
+        "name",
+        "createdAt"
+      ]
+    },
+    "Plan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Plan",
+      "type": "object",
+      "description": "Represents a subscription plan for the Hey Manito! application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the plan."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the plan (e.g., Basic, Premium)."
+        },
+        "credits": {
+          "type": "number",
+          "description": "The number of credits included in the plan. 1 credit = 1000 messages."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the plan."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the plan's features and benefits."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "credits",
+        "price",
+        "description"
+      ]
+    },
+    "Subscription": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subscription",
+      "type": "object",
+      "description": "Represents a user's subscription to a specific plan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subscription."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Subscription)"
+        },
+        "planId": {
+          "type": "string",
+          "description": "Reference to Plan. (Relationship: Plan 1:N Subscription)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The date the subscription started.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date the subscription ends.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the subscription (e.g., active, cancelled)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "planId",
+        "startDate",
+        "endDate",
+        "status"
+      ]
+    },
+    "Assistant": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Assistant",
+      "type": "object",
+      "description": "Represents a WhatsApp bot assistant managed within the Hey Manito! application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the assistant."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Assistant)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the assistant."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the assistant's purpose."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The phone number associated with the WhatsApp bot."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the assistant was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "description",
+        "phoneNumber",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Uses path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/plans/{planId}",
+        "definition": {
+          "entityName": "Plan",
+          "schema": {
+            "$ref": "#/backend/entities/Plan"
+          },
+          "description": "Stores subscription plans.",
+          "params": [
+            {
+              "name": "planId",
+              "description": "The unique identifier of the subscription plan."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subscriptions/{subscriptionId}",
+        "definition": {
+          "entityName": "Subscription",
+          "schema": {
+            "$ref": "#/backend/entities/Subscription"
+          },
+          "description": "Stores user subscriptions. Uses path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            },
+            {
+              "name": "subscriptionId",
+              "description": "The unique identifier of the user's subscription."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/assistants/{assistantId}",
+        "definition": {
+          "entityName": "Assistant",
+          "schema": {
+            "$ref": "#/backend/entities/Assistant"
+          },
+          "description": "Stores assistants associated with a user. Uses path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            },
+            {
+              "name": "assistantId",
+              "description": "The unique identifier of the user's assistant."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates. It uses path-based ownership for user-specific data, ensuring authorization independence and simple security rules. The structure promotes clarity, predictability, and consistency.\n\n**Authorization Independence:**\n\n*   User-owned data (assistants, subscriptions) are stored under the `/users/{userId}` path, making ownership explicit and avoiding the need for `get()` calls in security rules to verify ownership.\n\n**Structural Segregation:**\n\n*   Each top-level collection (`users`, `plans`) contains documents with the same security posture. This simplifies rules and makes them easier to understand and maintain.\n\n**Access Modeling:**\n\n*   **Private Data:** Path-based ownership (`/users/{userId}/assistants/{assistantId}`) is used for user-owned data, which is the preferred approach for private data.\n\n**QAPs Support:**\n\n*   The design supports secure `list` operations because authorization is based on the path and the `request.auth.uid`, so rules don't act as filters.\n\n**Invariants:**\n\n*   The path-based ownership structure ensures the integrity of ownership. Timestamps (createdAt, startDate, endDate) can be enforced via security rules to maintain data consistency."
+  }
+}
