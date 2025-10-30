@@ -35,21 +35,19 @@ const navLinks = [
 const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
     const pathname = usePathname();
     const isDemo = pathname.startsWith('/dashboarddemo');
-    const mobileNavLinks = navLinks.filter(l => l.mobile !== false);
 
     if (isSpecialPage) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
             <nav className={cn(
-                'grid items-center justify-around h-16',
-                `grid-cols-${mobileNavLinks.length}`
+                'flex items-center justify-between h-16 px-4'
             )}>
-                {mobileNavLinks.map(link => {
+                {navLinks.map(link => {
                     const href = isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href;
                     const isActive = pathname === href;
                     return (
-                        <Link key={`${href}-${link.label}-mobile`} href={href} className={cn('flex flex-row items-center justify-center gap-2 transition-colors h-full text-sm', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
+                        <Link key={`${href}-${link.label}-mobile`} href={href} className={cn('flex flex-col items-center justify-center gap-1 transition-colors h-full text-xs', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
                             <link.icon className="h-5 w-5" />
                             <span className="font-medium">{link.label}</span>
                         </Link>
@@ -302,3 +300,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     
 
+    
