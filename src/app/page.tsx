@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { AnimatedHeadline } from '@/components/layout/AnimatedHeadline'
 import { WaterAnimation } from '@/components/layout/WaterAnimation'
 import { HowItWorks } from '@/components/layout/HowItWorks'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 export default function Home() {
   const plans = [
@@ -38,6 +39,25 @@ export default function Home() {
       features: ["Asistentes ilimitados", "Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
       cta: "Contactar Ventas",
     },
+  ];
+
+  const faqItems = [
+    {
+        question: "¿Puedo cambiar de plan en cualquier momento?",
+        answer: "¡Por supuesto! Puedes mejorar, degradar o cancelar tu plan en cualquier momento desde el panel de control. Los cambios se aplicarán al inicio de tu próximo ciclo de facturación."
+    },
+    {
+        question: "¿Qué pasa si consumo todos mis créditos?",
+        answer: "Si te quedas sin créditos, tus asistentes se pausarán temporalmente. Puedes comprar más créditos en cualquier momento para reactivarlos instantáneamente, o esperar a que tu plan se renueve."
+    },
+    {
+        question: "¿Los asistentes pueden realizar llamadas de voz?",
+        answer: "Sí, dependiendo de las habilidades que configures, tus asistentes pueden tanto recibir como realizar llamadas de voz, además de interactuar por texto y audio."
+    },
+    {
+        question: "¿Qué se considera un 'mensaje' para el conteo de créditos?",
+        answer: "Un mensaje es cualquier interacción individual, ya sea enviada o recibida por el bot. Esto incluye mensajes de texto, audios, respuestas automáticas y cualquier otra comunicación gestionada por el asistente."
+    }
   ];
 
   return (
@@ -106,6 +126,29 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="faq" className="py-20 md:py-32 bg-background">
+        <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Preguntas Frecuentes</h2>
+                <p className="text-muted-foreground text-lg mb-12">
+                    ¿Tienes dudas? Aquí resolvemos las más comunes.
+                </p>
+            </div>
+            <div className="max-w-3xl mx-auto">
+                <Accordion type="single" collapsible className="w-full">
+                    {faqItems.map((item, index) => (
+                        <AccordionItem key={index} value={`item-${index}`}>
+                            <AccordionTrigger className="text-lg font-semibold text-left">{item.question}</AccordionTrigger>
+                            <AccordionContent className="text-muted-foreground">
+                                {item.answer}
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            </div>
         </div>
       </section>
 
