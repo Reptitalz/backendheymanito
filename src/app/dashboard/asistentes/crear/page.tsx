@@ -132,7 +132,7 @@ export default function CreateAssistantPage() {
             case "Nombre del Asistente":
                 return isNameValid;
             case "Imagen de Perfil":
-                return assistantImage !== null;
+                return true;
             case "Notificaciones (Opcional)":
                 return true;
             case "Personalidad":
@@ -221,8 +221,8 @@ export default function CreateAssistantPage() {
                 return (
                      <Card>
                         <CardHeader>
-                            <CardTitle>Paso 2: Imagen de Perfil</CardTitle>
-                            <CardDescription>Sube una imagen de perfil para tu asistente. Debe ser cuadrada y de al menos 640x640px.</CardDescription>
+                            <CardTitle>Paso 2: Imagen de Perfil (Opcional)</CardTitle>
+                            <CardDescription>Sube una imagen de perfil para tu asistente. Si no subes una, se usará un avatar genérico.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex flex-col items-center gap-4">
@@ -242,7 +242,7 @@ export default function CreateAssistantPage() {
                             <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground flex items-start gap-2">
                                 <Info className="h-5 w-5 shrink-0 mt-0.5" />
                                 <span>
-                                    La imagen de perfil es clave para la identidad de tu marca en WhatsApp. Asegúrate de que sea clara y representativa.
+                                    La imagen de perfil es clave para la identidad de tu marca. Asegúrate de que sea clara, cuadrada y de al menos 640x640px.
                                 </span>
                             </div>
                         </CardContent>
@@ -427,3 +427,5 @@ export default function CreateAssistantPage() {
         </div>
     );
 }
+
+    
