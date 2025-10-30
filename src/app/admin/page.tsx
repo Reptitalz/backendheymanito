@@ -21,19 +21,27 @@ export default function AdminLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email !== 'admin@heymanito.com') {
-      setError('Acceso denegado. Contacta al administrador.');
+    if (email !== 'reptitalz@heymanito.com') {
+      setError('Acceso denegado. Este correo no tiene permisos de administrador.');
       return;
     }
     
+    if (password !== 'Susan@12') {
+        setError('Contraseña incorrecta.');
+        return;
+    }
+
     try {
+        // Since we are validating the password manually, we can sign in with the expected credentials
         await signInWithEmailAndPassword(auth, email, password);
         router.push('/admin/dashboard');
     } catch (err: any) {
-        if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        if (err.code === 'auth/user-not-found') {
+            setError('El usuario administrador no existe. Contacta al soporte.');
+        } else if (err.code === 'auth/wrong-password') {
             setError('Credenciales inválidas. Inténtalo de nuevo.');
         } else {
-            setError('Ocurrió un error inesperado.');
+            setError('Ocurrió un error inesperado durante el inicio de sesión.');
         }
         console.error(err);
     }
@@ -62,7 +70,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@heymanito.com"
+                placeholder="reptitalz@heymanito.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -75,7 +83,7 @@ export default function AdminLoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="password"
+                placeholder="********"
                 required
               />
             </div>
