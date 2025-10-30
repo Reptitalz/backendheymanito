@@ -29,20 +29,21 @@ const navLinks = [
   { href: "/dashboard", demoHref: "/dashboarddemo", label: "Dashboard", icon: Home },
   { href: "/dashboard/asistentes", demoHref: "/dashboarddemo/asistentes", label: "Asistentes", icon: Bot },
   { href: "/dashboard/clients", demoHref: "/dashboard/clients", label: "Gestor", icon: Target },
-  { href: "/dashboard/processes", demoHref: "/dashboard/processes", label: "Procesos", icon: BrainCircuit },
+  { href: "/dashboard/processes", demoHref: "/dashboard/processes", label: "Procesos", icon: BrainCircuit, mobile: false },
   { href: "/dashboard/credits", demoHref: "/dashboard/credits", label: "Créditos", icon: CreditCard },
 ];
 
 const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
     const pathname = usePathname();
     const isDemo = pathname.startsWith('/dashboarddemo');
+    const mobileNavLinks = navLinks.filter(l => l.mobile !== false);
 
     if (isSpecialPage) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
-            <nav className="grid grid-cols-5 items-center justify-around h-16">
-                {navLinks.filter(l => !l.admin).map(link => {
+            <nav className={`grid grid-cols-${mobileNavLinks.length} items-center justify-around h-16`}>
+                {mobileNavLinks.map(link => {
                     const href = isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href;
                     const isActive = pathname === href;
                     return (
@@ -294,5 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+
+    
 
     
