@@ -64,8 +64,11 @@ export default function Home() {
         </div>
         <Header />
         <main className="relative z-10">
-          <section className="pt-48 pb-32 text-center text-white">
-            <div className="container mx-auto px-4">
+          <section className="relative pt-48 pb-32 text-center text-white overflow-hidden">
+            <div className="absolute inset-0 z-0">
+                <WaterAnimation progress={100} />
+            </div>
+            <div className="container mx-auto px-4 relative z-10">
               <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter font-headline mb-4">
                 Automatiza tu <AnimatedHeadline />, <br /> Conecta con tus Clientes
               </h1>
