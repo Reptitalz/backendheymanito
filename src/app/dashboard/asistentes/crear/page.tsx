@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Fingerprint, Milestone, Sparkles, Wand2, X, Info, Image as ImageIcon, Briefcase, User, Heart, Bot as BotIcon, Phone, PhoneCall, PhoneOutgoing, MessageSquare, UserCheck, CreditCard, Receipt, Sheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +76,7 @@ export default function CreateAssistantPage() {
     const [selectedPersonality, setSelectedPersonality] = useState<string | null>(null);
     const [customPrompt, setCustomPrompt] = useState("");
     const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+    const router = useRouter();
 
     const isNameValid = useMemo(() => assistantName.length > 2 && validationErrors.length === 0, [assistantName, validationErrors]);
 
@@ -149,7 +151,8 @@ export default function CreateAssistantPage() {
             setCurrentStep(currentStep + 1);
         } else {
              // Final action
-             console.log("Assistant Created!");
+             console.log("Redirecting to creation page...");
+             router.push('/dashboard/asistentes/creando');
         }
     }
 
@@ -352,7 +355,6 @@ export default function CreateAssistantPage() {
                     </Card>
                 );
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         currentStep, steps, assistantName, validationErrors, isNameValid, 
         assistantImage, phoneNumber, selectedPersonality, customPrompt, selectedSkills
@@ -425,5 +427,3 @@ export default function CreateAssistantPage() {
         </div>
     );
 }
-
-    
