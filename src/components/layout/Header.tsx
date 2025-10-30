@@ -9,71 +9,37 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '../ui/skeleton';
+import { useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
-// Simulated User type
-interface SimulatedUser {
-  uid: string;
-  isAnonymous: boolean;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-}
 
 export function Header() {
-  const [user, setUser] = useState<SimulatedUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Simulate checking auth state
-    setLoading(true);
-    const isDashboard = pathname.startsWith('/dashboard');
-    if (isDashboard) {
-      const isDemo = pathname.includes('demo');
-      if (isDemo) {
-        setUser({
-          uid: 'guest-123',
-          isAnonymous: true,
-          displayName: 'Invitado',
-          email: 'guest@example.com',
-          photoURL: null,
-        });
-      } else {
-        setUser({
-          uid: 'user-123',
-          isAnonymous: false,
-          displayName: 'Demo User',
-          email: 'user@example.com',
-          photoURL: `https://i.pravatar.cc/150?u=demo-user`,
-        });
-      }
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  }, [pathname]);
 
   const handleSignOut = async () => {
-    setUser(null);
-    router.push('/');
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
   };
 
   const getInitials = (name?: string | null) => {
-    if (user?.isAnonymous) return 'G';
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
   
   const getDisplayName = () => {
-    if (user?.isAnonymous) return 'Invitado';
     return user?.displayName;
   }
   
   const getDisplayEmail = () => {
-    if (user?.isAnonymous) return 'Explorando como invitado';
-    return user?.email;
-  }
+     return user?.email;
+  };
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 py-6 px-4 md:px-8">
@@ -90,7 +56,7 @@ export function Header() {
           <Link href="#pricing" className="hover:text-white transition-colors">Precios</Link>
         </nav>
         <div className="flex items-center gap-4">
-          {loading ? (
+          {isUserLoading ? (
             <Skeleton className="h-10 w-40 rounded-md bg-white/20" />
           ) : user ? (
              <DropdownMenu>
@@ -110,7 +76,7 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push(user.isAnonymous ? '/dashboarddemo' : '/dashboard')}>
+                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
                     <Bot className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>

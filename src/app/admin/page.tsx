@@ -9,20 +9,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Bot } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple mock authentication
-    if (email === 'admin@heymanito.com' && password === 'password') {
-      router.push('/admin/dashboard');
-    } else {
-      setError('Credenciales inválidas. Inténtalo de nuevo.');
+    if (email !== 'admin@heymanito.com') {
+      setError('Acceso denegado. Contacta al administrador.');
+      return;
+    }
+    
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push('/admin/dashboard');
+    } catch (err: any) {
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+            setError('Credenciales inválidas. Inténtalo de nuevo.');
+        } else {
+            setError('Ocurrió un error inesperado.');
+        }
+        console.error(err);
     }
   };
 
@@ -62,6 +75,7 @@ export default function AdminLoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="password"
                 required
               />
             </div>

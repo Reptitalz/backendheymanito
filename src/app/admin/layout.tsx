@@ -10,15 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-
-// Simulated User type
-interface SimulatedUser {
-  uid: string;
-  isAnonymous: boolean;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-}
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: Home },
@@ -47,31 +40,24 @@ const MobileBottomNav = () => {
 
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SimulatedUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Simulate auth state change
-    setLoading(true);
-    // For admin, we assume a logged-in state if not on the main admin login page
-    if (pathname !== '/admin') {
-      setUser({
-        uid: 'admin-user-123',
-        isAnonymous: false,
-        displayName: 'Admin User',
-        email: 'admin@example.com',
-        photoURL: `https://i.pravatar.cc/150?u=admin-user`,
-      });
-    } else {
-        setUser(null); // No user on login page
+    if (!isUserLoading && !user && pathname !== '/admin') {
+      router.push('/admin');
     }
-    setLoading(false);
-  }, [pathname]);
+    // Allow access to /admin login page even if there is a user
+    // but redirect to dashboard if they are already logged in and try to access it
+    if (!isUserLoading && user && user.email === 'admin@heymanito.com' && pathname === '/admin') {
+      router.push('/admin/dashboard');
+    }
+  }, [user, isUserLoading, router, pathname]);
 
   const handleSignOut = async () => {
-    setUser(null);
+    await signOut(auth);
     router.push('/admin');
   };
 
@@ -79,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!name) return 'A';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
-
+  
   const getDisplayName = () => {
     return user?.displayName;
   };
@@ -112,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
   );
 
-  if (loading || !user) {
+  if (isUserLoading || !user) {
     return loadingSkeleton;
   }
   

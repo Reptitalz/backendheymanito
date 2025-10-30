@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
+import { useAuth } from '@/firebase'
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 
 // A better substitute for the Google icon
 const GoogleIcon = () => (
@@ -19,17 +21,27 @@ const GoogleIcon = () => (
 
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const router = useRouter()
+  const auth = useAuth();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
-    // Simulate sign in
-    router.push('/dashboard')
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/dashboard');
+      toast({
+        title: '¡Bienvenido!',
+        description: 'Has iniciado sesión correctamente.',
+      });
+    } catch (error: any) {
+      console.error("Error during Google sign-in:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: error.message || 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.',
+      });
+    }
   }
-
-  const handleGuestSignIn = async () => {
-    // Simulate guest sign in
-    router.push('/dashboarddemo');
-  };
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-xl">

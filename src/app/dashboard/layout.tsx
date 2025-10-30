@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Bot, Home, LogOut, Menu, Package, Users, CreditCard, Target, Shield, BrainCircuit } from "lucide-react";
 import { useSwipeable } from 'react-swipeable';
+import { signOut } from 'firebase/auth';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,26 +16,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useUser, useAuth } from '@/firebase';
 
-// Simulated User type
-interface SimulatedUser {
-  uid: string;
-  isAnonymous: boolean;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-}
 
 const navLinks = [
-  { href: "/dashboard", demoHref: "/dashboarddemo", label: "Dashboard", icon: Home },
-  { href: "/dashboard/asistentes", demoHref: "/dashboarddemo/asistentes", label: "Asistentes", icon: Bot },
-  { href: "/dashboard/clients", demoHref: "/dashboard/clients", label: "Gestor", icon: Target },
-  { href: "/dashboard/credits", demoHref: "/dashboard/credits", label: "Créditos", icon: CreditCard },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/dashboard/asistentes", label: "Asistentes", icon: Bot },
+  { href: "/dashboard/clients", label: "Gestor", icon: Target },
+  { href: "/dashboard/credits", label: "Créditos", icon: CreditCard },
 ];
 
 const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
     const pathname = usePathname();
-    const isDemo = pathname.startsWith('/dashboarddemo');
 
     if (isSpecialPage) return null;
 
@@ -44,10 +37,10 @@ const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
                 'flex items-center justify-between h-16 px-4'
             )}>
                 {navLinks.map(link => {
-                    const href = isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href;
+                    const href = link.href;
                     const isActive = pathname === href;
                     return (
-                        <Link key={`${href}-${link.label}-mobile`} href={href} className={cn('flex flex-col items-center justify-center gap-1 transition-colors h-full text-xs', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
+                        <Link key={`${href}-${link.label}-mobile`} href={href} className={cn('flex flex-row items-center justify-center gap-2 transition-colors h-full text-xs px-2', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
                             <link.icon className="h-5 w-5" />
                             <span className="font-medium">{link.label}</span>
                         </Link>
@@ -60,13 +53,12 @@ const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SimulatedUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
-  const isDemo = pathname.startsWith('/dashboarddemo');
   const isSpecialPage = pathname === '/dashboard/asistentes/crear' || pathname.includes('/habilidades') || pathname.includes('/conectar') || pathname.includes('/creando');
 
   const swipeHandlers = useSwipeable({
@@ -79,8 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleSwipe = (direction: number) => {
     if (isSpecialPage) return; // Disable swipe on create page
     const currentPath = pathname;
-    const isDemo = currentPath.startsWith('/dashboarddemo');
-    const relevantLinks = navLinks.map(l => isDemo && l.demoHref ? l.demoHref : l.href);
+    const relevantLinks = navLinks.map(l => l.href);
     const currentIndex = relevantLinks.indexOf(currentPath);
 
     if (currentIndex !== -1) {
@@ -92,49 +83,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
   
   useEffect(() => {
-    // Simulate auth state change
-    setLoading(true);
-    // This logic determines if we should be in a "logged in" or "guest" state
-    // For this simulation, any dashboard access is considered "logged in" in some capacity.
-    // The demo route specifically handles the guest/demo experience.
-    
-    if (isDemo) {
-      // Simulate guest user
-      setUser({
-        uid: 'guest-123',
-        isAnonymous: true,
-        displayName: 'Invitado',
-        email: 'guest@example.com',
-        photoURL: null,
-      });
-      if(pathname === '/dashboarddemo'){
-        toast({
-            title: "Modo Demostración",
-            description: "Estás viendo una versión de demostración. Inicia sesión para guardar tu trabajo.",
-        });
-      }
-    } else {
-       // Simulate a logged-in user for the main dashboard
-       setUser({
-        uid: 'user-123',
-        isAnonymous: false,
-        displayName: 'Demo User',
-        email: 'user@example.com',
-        photoURL: `https://i.pravatar.cc/150?u=demo-user`,
-      });
+    if (!isUserLoading && !user) {
+      router.push('/login');
     }
-    
-    setLoading(false);
-
-  }, [pathname, toast, isDemo, router]);
+  }, [user, isUserLoading, router]);
 
   const handleSignOut = async () => {
-    setUser(null);
-    router.push('/');
+    try {
+      await signOut(auth);
+      router.push('/');
+      toast({
+        title: 'Has cerrado sesión',
+        description: 'Vuelve pronto.',
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo cerrar la sesión.',
+      });
+    }
   };
 
   const getInitials = (name?: string | null) => {
-    if (user?.isAnonymous) return 'G';
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
@@ -144,7 +116,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
   
   const getDisplayEmail = () => {
-     if (user?.isAnonymous) return 'Explorando como invitado';
      return user?.email;
   };
 
@@ -167,14 +138,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
   );
 
-  if (loading || !user) {
+  if (isUserLoading || !user) {
     return loadingSkeleton;
   }
   
   const desktopNavLinks = navLinks.map(link => ({
     ...link,
-    href: isDemo && ['/dashboard', '/dashboard/asistentes'].includes(link.href) ? link.demoHref : link.href,
-    badge: (link.href === '/dashboard/asistentes' ? (isDemo ? 4 : 3) : 0),
+    href: link.href,
+    badge: (link.href === '/dashboard/asistentes' ? 3 : 0),
   }));
 
   if (isSpecialPage) {
@@ -221,10 +192,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {desktopNavLinks.map(link => {
-                // For a real admin user, you'd have a check like `user.isAdmin`
-                 const isAdmin = !user.isAnonymous; // Simulated admin
-                 if (link.admin && !isAdmin) return null;
-
                  return(
                  <Link key={`${link.href}-${link.label}`} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${pathname.startsWith(link.href) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}>
                     <link.icon className="h-4 w-4" />
@@ -278,12 +245,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{getDisplayName()}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(user.isAnonymous ? '/dashboarddemo' : '/dashboard')}>
+              <DropdownMenuItem onClick={() => router.push('/dashboard')}>
                 <Bot className="mr-2 h-4 w-4" />
                 <span>Dashboard</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>Cerrar sesión</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar sesión
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -295,9 +265,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
-
-    
-
-    
-
-    
