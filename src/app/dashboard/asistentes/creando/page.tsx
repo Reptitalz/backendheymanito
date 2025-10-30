@@ -70,7 +70,7 @@ export default function CreatingAssistantPage() {
 
         const draw = () => {
             if (!canvasRef.current) return;
-            const computedStyle = getComputedStyle(canvasRef.current);
+            const computedStyle = getComputedStyle(document.documentElement);
             const primaryColor = computedStyle.getPropertyValue('--primary').trim();
             const accentColor = computedStyle.getPropertyValue('--accent').trim();
 
@@ -86,9 +86,9 @@ export default function CreatingAssistantPage() {
 
             // Create a gradient for the water
             const gradient = ctx.createLinearGradient(0, waterY, 0, CH);
-            gradient.addColorStop(0, `hsla(${primaryColor}, 0.8)`);
-            gradient.addColorStop(0.5, `hsla(${accentColor}, 0.6)`);
-            gradient.addColorStop(1, `hsla(${primaryColor}, 0.8)`);
+            gradient.addColorStop(0, `hsla(${primaryColor.split(' ').join(', ')}, 0.8)`);
+            gradient.addColorStop(0.5, `hsla(${accentColor.split(' ').join(', ')}, 0.6)`);
+            gradient.addColorStop(1, `hsla(${primaryColor.split(' ').join(', ')}, 0.8)`);
             
             ctx.beginPath();
             ctx.moveTo(0, CH);
@@ -116,7 +116,7 @@ export default function CreatingAssistantPage() {
             ctx.lineTo(CW, CH);
             ctx.closePath();
             
-            ctx.fillStyle = `hsla(${primaryColor}, 0.3)`;
+            ctx.fillStyle = `hsla(${primaryColor.split(' ').join(', ')}, 0.3)`;
             ctx.fill();
 
             waveOffset += waveSpeed;
