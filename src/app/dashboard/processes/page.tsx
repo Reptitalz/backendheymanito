@@ -2,13 +2,14 @@
 'use client'
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Users, ShieldCheck, ShoppingCart, CreditCard, Image as ImageIcon, ChevronsUpDown, Database, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
+import MonitorContent from '@/app/admin/monitor/page';
 
 const managementSections = [
     { id: "clients", href: "/dashboard/clients", label: "Clientes", icon: Users },
@@ -20,26 +21,8 @@ const managementSections = [
     { id: "database", href: "/dashboard/database", label: "Base de Datos", icon: Database },
 ];
 
-const PlaceholderContent = ({ section }: { section: { label: string, icon: React.ElementType }}) => (
-     <Card>
-        <CardHeader>
-            <div className="flex items-center justify-between">
-                <CardTitle>{section.label}</CardTitle>
-                <section.icon className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <CardDescription>Gestiona {section.label.toLowerCase()} desde aquí.</CardDescription>
-        </CardHeader>
-        <CardContent className="h-96 flex items-center justify-center">
-            <div className="text-center">
-                <p className="text-muted-foreground">Contenido de {section.label} próximamente.</p>
-            </div>
-        </CardContent>
-    </Card>
-);
-
-export default function PaymentsPage() {
+export default function ProcessesPage() {
     const pathname = usePathname();
-    const router = useRouter();
     const section = managementSections.find(s => s.href === pathname);
     
     return (
@@ -50,8 +33,8 @@ export default function PaymentsPage() {
                     <p className="text-sm text-muted-foreground">Administra clientes, ventas, pagos y más desde un solo lugar.</p>
                 </div>
             </div>
-            
-            {/* Mobile navigation */}
+
+             {/* Mobile navigation */}
             <div className="md:hidden pt-4">
                 <Sheet>
                     <SheetTrigger asChild>
@@ -95,6 +78,7 @@ export default function PaymentsPage() {
                 </Sheet>
             </div>
 
+
             <div className="grid md:grid-cols-4 gap-8 pt-4">
                 <aside className="hidden md:flex md:col-span-1 flex-col">
                      <nav className="flex flex-col gap-1">
@@ -114,7 +98,7 @@ export default function PaymentsPage() {
                     </nav>
                 </aside>
                 <main className="md:col-span-3">
-                    {section && <PlaceholderContent section={section} />}
+                    <MonitorContent />
                 </main>
             </div>
         </>
