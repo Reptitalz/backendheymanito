@@ -1,3 +1,4 @@
+
 "use client"
 
 import { usePathname, useRouter } from 'next/navigation'
@@ -26,6 +27,12 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+        'displayName': 'Hey Manito!',
+        'prompt': 'select_account',
+    });
+    auth.tenantId = null; // Ensure we are not using a tenant for this general sign-in
+    
     try {
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
