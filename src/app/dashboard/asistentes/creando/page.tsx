@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 export default function CreatingAssistantPage() {
     const router = useRouter();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const waveOffsetRef = useRef(0);
     const [progress, setProgress] = useState(0);
     const [displayText, setDisplayText] = useState("Inicializando...");
 
@@ -60,7 +61,6 @@ export default function CreatingAssistantPage() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        let waveOffset = 0;
         let animationFrameId: number;
 
         const resizeCanvas = () => {
@@ -69,7 +69,8 @@ export default function CreatingAssistantPage() {
         };
 
         const draw = () => {
-            if (!canvasRef.current) return;
+            if (!canvasRef.current || !ctx) return;
+            
             const computedStyle = getComputedStyle(document.documentElement);
             const primaryColor = computedStyle.getPropertyValue('--primary').trim();
             const accentColor = computedStyle.getPropertyValue('--accent').trim();
@@ -95,7 +96,7 @@ export default function CreatingAssistantPage() {
             ctx.lineTo(0, waterY);
 
             for (let x = 0; x <= CW; x += 1) {
-                const y = waterY + waveAmplitude * Math.sin(x * waveFrequency + waveOffset);
+                const y = waterY + waveAmplitude * Math.sin(x * waveFrequency + waveOffsetRef.current);
                 ctx.lineTo(x, y);
             }
 
@@ -107,10 +108,10 @@ export default function CreatingAssistantPage() {
 
             // Draw a second, slightly offset wave for depth
             ctx.beginPath();
-             ctx.moveTo(0, CH);
+            ctx.moveTo(0, CH);
             ctx.lineTo(0, waterY);
             for (let x = 0; x <= CW; x += 1) {
-                const y = waterY + (waveAmplitude * 1.2) * Math.sin(x * (waveFrequency * 0.8) + waveOffset + 2);
+                const y = waterY + (waveAmplitude * 1.2) * Math.sin(x * (waveFrequency * 0.8) + waveOffsetRef.current + 2);
                 ctx.lineTo(x, y);
             }
             ctx.lineTo(CW, CH);
@@ -119,7 +120,7 @@ export default function CreatingAssistantPage() {
             ctx.fillStyle = `hsla(${primaryColor.split(' ').join(', ')}, 0.3)`;
             ctx.fill();
 
-            waveOffset += waveSpeed;
+            waveOffsetRef.current += waveSpeed;
             animationFrameId = requestAnimationFrame(draw);
         };
         
