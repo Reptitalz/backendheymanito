@@ -36,9 +36,25 @@
             }
         },
         "createdAt": { "type": "string", "format": "date-time", "description": "The date and time the assistant was created." },
-        "lastUpdate": { "type": "string", "format": "date-time", "description": "The date and time the assistant was last updated." }
+        "lastUpdate": { "type": "string", "format": "date-time", "description": "The date and time the assistant was last updated." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this assistant." }
       },
-      "required": ["name", "personality", "skills", "status", "createdAt", "lastUpdate"]
+      "required": ["name", "personality", "skills", "status", "createdAt", "lastUpdate", "userId"]
+    },
+    "Client": {
+        "title": "Client",
+        "description": "Represents a client or contact managed by the user's assistants.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "description": "The client's full name." },
+            "phone": { "type": "string", "description": "The client's phone number." },
+            "email": { "type": "string", "format": "email", "description": "The client's email address." },
+            "status": { "type": "string", "enum": ["Nuevo", "Contactado", "Seguimiento", "No Interesado"], "description": "The current status of the client." },
+            "lastContact": { "type": "string", "format": "date-time", "description": "The timestamp of the last interaction." },
+            "tags": { "type": "array", "items": { "type": "string" }, "description": "A list of tags for categorizing the client." },
+            "userId": { "type": "string", "description": "The ID of the user who owns this client." }
+        },
+        "required": ["name", "phone", "userId"]
     }
   },
   "auth": {
@@ -54,6 +70,10 @@
     "/users/{userId}/assistants/{assistantId}": {
       "schema": { "$ref": "#/entities/Assistant" },
       "description": "Stores the assistants created by a specific user."
+    },
+    "/users/{userId}/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Stores the clients managed by a specific user."
     }
   }
 }

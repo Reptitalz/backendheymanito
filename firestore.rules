@@ -122,5 +122,29 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
     }
+    
+    /**
+     * @description Enforces user-ownership for clients. Only the authenticated user can manage their own clients.
+     * @path /users/{userId}/clients/{clientId}
+     */
+    match /users/{userId}/clients/{clientId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
   }
 }
