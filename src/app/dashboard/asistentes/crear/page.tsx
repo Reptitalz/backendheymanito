@@ -16,7 +16,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth, useFirestore, useUser } from "@/firebase";
+import { useAuth, useFirestore, useUser, FirestorePermissionError, errorEmitter } from "@/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -156,8 +156,8 @@ export default function CreateAssistantPage() {
         }
     }
     
-    const handleCreateAssistant = async () => {
-        if (!user) {
+    const handleCreateAssistant = () => {
+        if (!user || !firestore) {
             toast({
                 variant: "destructive",
                 title: "Error de autenticación",
@@ -166,37 +166,40 @@ export default function CreateAssistantPage() {
             return;
         }
         setIsSubmitting(true);
-        try {
-            const assistantsCollection = collection(firestore, 'users', user.uid, 'assistants');
-            await addDoc(assistantsCollection, {
-                name: assistantName,
-                image: assistantImage,
-                ownerNotificationNumber: phoneNumber,
-                personality: selectedPersonality,
-                customPrompt: selectedPersonality === 'custom' ? customPrompt : null,
-                skills: selectedSkills,
-                status: "Activo",
-                waId: "",
-                verified: false,
-                usage: {
-                    messagesUsed: 0,
-                    messageLimit: 1000,
-                },
-                createdAt: serverTimestamp(),
-                lastUpdate: serverTimestamp(),
-            });
+        
+        const assistantsCollection = collection(firestore, 'users', user.uid, 'assistants');
+        const assistantData = {
+            userId: user.uid,
+            name: assistantName,
+            image: assistantImage,
+            ownerNotificationNumber: phoneNumber,
+            personality: selectedPersonality,
+            customPrompt: selectedPersonality === 'custom' ? customPrompt : null,
+            skills: selectedSkills,
+            status: "Activo",
+            waId: "",
+            verified: false,
+            usage: {
+                messagesUsed: 0,
+                messageLimit: 1000,
+            },
+            createdAt: serverTimestamp(),
+            lastUpdate: serverTimestamp(),
+        };
 
-            router.push('/dashboard/asistentes/creando');
-
-        } catch (error) {
-            console.error("Error creating assistant:", error);
-            toast({
-                variant: "destructive",
-                title: "Error al crear asistente",
-                description: "No se pudo guardar el asistente. Inténtalo de nuevo.",
+        addDoc(assistantsCollection, assistantData)
+            .then(() => {
+                router.push('/dashboard/asistentes/creando');
+            })
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: assistantsCollection.path,
+                    operation: 'create',
+                    requestResourceData: assistantData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setIsSubmitting(false);
             });
-            setIsSubmitting(false);
-        }
     };
 
     const handleNext = () => {
