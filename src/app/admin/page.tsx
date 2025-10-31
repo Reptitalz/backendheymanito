@@ -23,7 +23,8 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError(''); // Clear previous errors
 
-    if (email !== 'reptitalz@heymanito.com') {
+    // Use environment variable for admin email check
+    if (email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       setError('Acceso denegado. Este correo no tiene permisos de administrador.');
       return;
     }
@@ -65,7 +66,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="reptitalz@heymanito.com"
+                placeholder="admin@heymanito.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
