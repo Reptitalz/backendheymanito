@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collectionGroup, doc, getDoc, Query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -89,12 +89,13 @@ export default function MonitorPage() {
     const [isClient, setIsClient] = useState(false);
     
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const assistantsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null;
         // Use collectionGroup to query all 'assistants' collections across all users
         return collectionGroup(firestore, 'assistants') as Query;
-    }, [firestore]);
+    }, [firestore, user]);
 
     const { data: allAssistants, isLoading: isAssistantsLoading } = useCollection<Assistant>(assistantsQuery);
 
