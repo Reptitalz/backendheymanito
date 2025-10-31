@@ -3,13 +3,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, MessageSquare, Mic, AudioLines, BrainCircuit, Check, X, FileText, Search } from 'lucide-react';
+import { Bot, MessageSquare, Mic, AudioLines, BrainCircuit, Check, X, FileText, Search, User } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from '@/components/ui/input';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collectionGroup, doc, getDoc, Query } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ProcessStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 type ProcessStep = {
@@ -27,11 +30,12 @@ type AssistantActivity = {
     processes: ProcessStep[];
 };
 
-const initialAssistants: AssistantActivity[] = [
-    { assistantId: "asst_1", assistantName: "Asistente de Ventas", userName: "Juan Pérez", lastActivity: "Ahora mismo", processes: [] },
-    { assistantId: "asst_3", assistantName: "Recordatorios de Citas", userName: "Ana Martínez", lastActivity: "Hace 2 minutos", processes: [] },
-    { assistantId: "asst_6", assistantName: "Gestor de Pedidos", userName: "Carlos Sánchez", lastActivity: "Hace 5 minutos", processes: [] },
-];
+// Firestore Assistant type
+interface Assistant {
+  id: string;
+  name: string;
+  userId: string;
+}
 
 const processTemplates: Omit<ProcessStep, 'id' | 'status' | 'log'>[] = [
     { name: "Mensaje de voz recibido", icon: Mic },
@@ -41,7 +45,6 @@ const processTemplates: Omit<ProcessStep, 'id' | 'status' | 'log'>[] = [
     { name: "Enviando respuesta...", icon: MessageSquare },
 ];
 
-// Component for the circular status indicator with icon
 const StatusIcon = ({ status, icon: Icon }: { status: ProcessStatus, icon: React.ElementType }) => {
     const baseClasses = "flex items-center justify-center h-10 w-10 rounded-full text-white transition-all transform hover:scale-110";
     
@@ -81,13 +84,60 @@ const StatusIcon = ({ status, icon: Icon }: { status: ProcessStatus, icon: React
 };
 
 export default function MonitorPage() {
-    const [activities, setActivities] = useState<AssistantActivity[]>(initialAssistants);
+    const [activities, setActivities] = useState<AssistantActivity[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isClient, setIsClient] = useState(false);
+    
+    const firestore = useFirestore();
+
+    const assistantsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        // Use collectionGroup to query all 'assistants' collections across all users
+        return collectionGroup(firestore, 'assistants') as Query;
+    }, [firestore]);
+
+    const { data: allAssistants, isLoading: isAssistantsLoading } = useCollection<Assistant>(assistantsQuery);
+
+    // Effect to transform Firestore data into UI data
+    useEffect(() => {
+        if (allAssistants && firestore) {
+            const fetchUserNames = async () => {
+                const activitiesPromises = allAssistants.map(async (assistant) => {
+                    let userName = 'Usuario Desconocido';
+                    try {
+                        const userDocRef = doc(firestore, 'users', assistant.userId);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists()) {
+                            userName = userDoc.data().displayName || 'Sin Nombre';
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching user ${assistant.userId}:`, error);
+                    }
+                    
+                    // Check if this assistant is already in the activities state to preserve its processes
+                    const existingActivity = activities.find(a => a.assistantId === assistant.id);
+
+                    return {
+                        assistantId: assistant.id,
+                        assistantName: assistant.name,
+                        userName: userName,
+                        lastActivity: existingActivity?.lastActivity || 'Inactivo',
+                        processes: existingActivity?.processes || [],
+                    };
+                });
+                const resolvedActivities = await Promise.all(activitiesPromises);
+                setActivities(resolvedActivities);
+            };
+            fetchUserNames();
+        }
+    }, [allAssistants, firestore]);
+
 
     useEffect(() => {
         setIsClient(true);
         const interval = setInterval(() => {
+            if (activities.length === 0) return;
+
             setActivities(prevActivities => {
                 const randomAssistantIndex = Math.floor(Math.random() * prevActivities.length);
                 
@@ -95,38 +145,34 @@ export default function MonitorPage() {
                     if (index === randomAssistantIndex) {
                          const currentProcesses = [...activity.processes];
 
-                        // If it's the start of a new chain or the last one completed/failed, reset and start over
                         if (currentProcesses.length === 0 || 
                             currentProcesses[currentProcesses.length - 1].status === 'completed' || 
                             currentProcesses[currentProcesses.length - 1].status === 'failed') {
                             
                             const newProcess: ProcessStep = {
                                 ...processTemplates[0],
-                                id: 0, // Reset id
+                                id: Date.now(), // Use timestamp for unique ID
                                 status: 'in_progress',
                                 log: "Recibiendo paquete de audio..."
                             };
                             return { ...activity, lastActivity: "Ahora mismo", processes: [newProcess] };
                         }
                         
-                        // If there's a process in progress, advance it
                         const currentProcessIndex = currentProcesses.findIndex(p => p.status === 'in_progress');
                         if (currentProcessIndex !== -1) {
-                             const shouldFail = Math.random() < 0.05; // 5% chance to fail
+                             const shouldFail = Math.random() < 0.05; 
 
-                             // Complete current step
                              currentProcesses[currentProcessIndex] = {
                                  ...currentProcesses[currentProcessIndex],
                                  status: 'completed',
                                  log: currentProcesses[currentProcessIndex].log + " -> ¡Completado!"
                              };
 
-                             // Start next step if not the end
                              if (currentProcessIndex < processTemplates.length - 1) {
                                  const nextStepTemplate = processTemplates[currentProcessIndex + 1];
                                  currentProcesses.push({
                                      ...nextStepTemplate,
-                                     id: currentProcesses.length,
+                                     id: Date.now(), // Unique ID
                                      status: shouldFail ? 'failed' : 'in_progress',
                                      log: shouldFail ? 'Error: Fallo en la red' : `Iniciando ${nextStepTemplate.name.toLowerCase()}`
                                  });
@@ -135,15 +181,14 @@ export default function MonitorPage() {
                              return { ...activity, processes: currentProcesses };
                         }
                     }
-                    // Update last activity time for others
                     if (activity.lastActivity === "Ahora mismo") return {...activity, lastActivity: "Hace 1 minuto" };
                     return activity;
                 });
             });
-        }, 2500); // Update every 2.5 seconds
+        }, 2500); 
 
         return () => clearInterval(interval);
-    }, []);
+    }, [activities]); // Rerun interval logic when activities are loaded/updated
     
     const filteredActivities = activities.filter(activity =>
         activity.assistantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,6 +196,31 @@ export default function MonitorPage() {
     );
 
     if (!isClient) return null;
+
+    const renderLoadingState = () => (
+         <div className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+                <Card key={i}>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                           <div className="flex items-center gap-2">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <div className="space-y-1">
+                                    <Skeleton className="h-5 w-40" />
+                                    <Skeleton className="h-4 w-60" />
+                                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-2">
+                        <div className="text-center text-muted-foreground py-8">
+                            <Skeleton className="h-5 w-32 mx-auto" />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-full">
@@ -175,71 +245,84 @@ export default function MonitorPage() {
             </div>
 
             <div className="flex-1 space-y-6 overflow-y-auto">
-                <AnimatePresence>
-                    {filteredActivities.map((activity) => (
-                        <motion.div key={activity.assistantId} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}>
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <Bot className="h-5 w-5" /> {activity.assistantName}
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Propietario: {activity.userName} <Badge variant="secondary" className="ml-2">{activity.lastActivity}</Badge>
-                                            </CardDescription>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-2">
-                                    <div className="relative">
-                                        {activity.processes.length > 0 ? (
-                                            <>
-                                                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-gray-200 -translate-y-1/2"></div>
-                                                <div className="relative flex justify-between items-center">
-                                                    <AnimatePresence>
-                                                        {activity.processes.map((process) => (
-                                                            <motion.div
-                                                                key={process.id}
-                                                                layout
-                                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                exit={{ opacity: 0, scale: 0.5 }}
-                                                                transition={{ duration: 0.3 }}
-                                                            >
-                                                                <Popover>
-                                                                    <PopoverTrigger asChild>
-                                                                        <button>
-                                                                            <StatusIcon status={process.status} icon={process.icon} />
-                                                                        </button>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent className="w-80">
-                                                                        <div className="grid gap-4">
-                                                                            <div className="space-y-2">
-                                                                                <h4 className="font-medium leading-none">{process.name}</h4>
-                                                                                <p className="text-sm text-muted-foreground font-mono">
-                                                                                    {process.log}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                            </motion.div>
-                                                        ))}
-                                                    </AnimatePresence>
+                {isAssistantsLoading ? renderLoadingState() : (
+                    <AnimatePresence>
+                        {filteredActivities.length > 0 ? filteredActivities.map((activity) => (
+                            <motion.div key={activity.assistantId} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                <Card>
+                                    <CardHeader>
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-4">
+                                                <Bot className="h-6 w-6 text-muted-foreground" />
+                                                <div>
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        {activity.assistantName}
+                                                    </CardTitle>
+                                                    <CardDescription className="flex items-center gap-2 mt-1">
+                                                        <User className="h-4 w-4" /> 
+                                                        {activity.userName} 
+                                                        <Badge variant="secondary" className="ml-2">{activity.lastActivity}</Badge>
+                                                    </CardDescription>
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <div className="text-center text-muted-foreground py-8">
-                                                <p>Esperando actividad...</p>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="pt-2">
+                                        <div className="relative">
+                                            {activity.processes.length > 0 ? (
+                                                <>
+                                                    <div className="absolute top-1/2 left-5 right-5 h-0.5 bg-gray-200 -translate-y-1/2"></div>
+                                                    <div className="relative flex justify-between items-center px-1">
+                                                        <AnimatePresence>
+                                                            {activity.processes.map((process) => (
+                                                                <motion.div
+                                                                    key={process.id}
+                                                                    layout
+                                                                    initial={{ opacity: 0, scale: 0.5 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    exit={{ opacity: 0, scale: 0.5 }}
+                                                                    transition={{ duration: 0.3 }}
+                                                                >
+                                                                    <Popover>
+                                                                        <PopoverTrigger asChild>
+                                                                            <button>
+                                                                                <StatusIcon status={process.status} icon={process.icon} />
+                                                                            </button>
+                                                                        </PopoverTrigger>
+                                                                        <PopoverContent className="w-80">
+                                                                            <div className="grid gap-4">
+                                                                                <div className="space-y-2">
+                                                                                    <h4 className="font-medium leading-none">{process.name}</h4>
+                                                                                    <p className="text-sm text-muted-foreground font-mono">
+                                                                                        {process.log}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </PopoverContent>
+                                                                    </Popover>
+                                                                </motion.div>
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="text-center text-muted-foreground py-8">
+                                                    <p>Esperando actividad...</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )) : (
+                             <Card>
+                                <CardContent className="text-center text-muted-foreground p-8">
+                                    No se encontraron asistentes.
                                 </CardContent>
                             </Card>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
+                        )}
+                    </AnimatePresence>
+                )}
             </div>
         </div>
     );
