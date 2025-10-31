@@ -32,6 +32,12 @@ service cloud.firestore {
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
+    
+    function isAdmin() {
+      // Ensure you have NEXT_PUBLIC_ADMIN_EMAIL set in your environment
+      // This is a placeholder, in a real app you might use custom claims.
+      return request.auth.token.email == "admin@heymanito.com";
+    }
 
     /**
      * @description Enforces user-ownership for user profiles. Only the authenticated user can read, update, or delete their own profile.
@@ -43,8 +49,8 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // User listing is disallowed.
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
@@ -75,40 +81,42 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/subscriptions/{subscriptionId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) || isAdmin();
+        allow list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
         allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
         allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces user-ownership for assistants. Only the authenticated user can read, create, update, or delete their own assistants.
+     * @description Enforces user-ownership for assistants, but allows admin read access.
      * @path /users/{userId}/assistants/{assistantId}
-     * @allow (create) - User 'user_abc' can create an assistant at /users/user_abc/assistants/assist_123 if request.auth.uid == 'user_abc'.
-     * @allow (get, update, delete) - User 'user_abc' can get, update, or delete their assistant at /users/user_abc/assistants/assist_123 if request.auth.uid == 'user_abc'.
-     * @deny (create) - User 'user_xyz' cannot create an assistant at /users/user_abc/assistants/assist_123.
-     * @deny (get, update, delete) - User 'user_xyz' cannot get, update, or delete the assistant at /users/user_abc/assistants/assist_123.
-     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/assistants/{assistantId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
     }
     
     /**
-     * @description Enforces user-ownership for clients. Only the authenticated user can manage their own clients.
+     * @description Enforces user-ownership for clients, but allows admin read access.
      * @path /users/{userId}/clients/{clientId}
      */
     match /users/{userId}/clients/{clientId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
+    }
+    
+    /**
+     * @description Collection group query for assistants, only for admins.
+     */
+    match /{path=**}/assistants/{assistantId} {
+      allow get, list: if isAdmin();
     }
   }
 }
