@@ -61,36 +61,35 @@ export default function CreditsPage() {
     ];
     
     const plans = [
-        {
-          name: "Gratuito",
-          price: "$0",
-          period: "/mes",
-          description: "Para empezar a explorar.",
-          features: ["500 Mensajes/mes", "Asistentes ilimitados", "Soporte básico"],
-          cta: "Plan Actual",
-          disabled: true,
-          variant: "secondary"
-        },
-        {
-          name: "Manito Pro",
-          price: "$810",
-          period: "MXN/mes",
-          description: "Para negocios en crecimiento.",
-          features: ["5,000 Mensajes/mes", "Asistentes ilimitados", "Integraciones y API", "Soporte prioritario"],
-          cta: "Mejorar a Pro",
-          popular: true,
-          variant: "default"
-        },
-        {
-          name: "Manito Empresa",
-          price: "A medida",
-          period: "",
-          description: "Soluciones para grandes volúmenes.",
-          features: ["Créditos personalizados", "Asistentes ilimitados", "Soporte dedicado 24/7", "Funciones avanzadas"],
-          cta: "Contactar Ventas",
-          variant: "outline"
-        },
-      ];
+      {
+        name: "Paquete Básico",
+        price: "$450",
+        period: "MXN",
+        description: "5,000 créditos para tus asistentes.",
+        features: ["~5,000 Mensajes", "Válido por 1 año", "Ideal para tráfico moderado"],
+        cta: "Comprar Paquete",
+        variant: "default"
+      },
+      {
+        name: "Paquete Pro",
+        price: "$810",
+        period: "MXN",
+        description: "10,000 créditos a un mejor precio.",
+        features: ["~10,000 Mensajes", "Válido por 1 año", "Acceso a API", "Soporte prioritario"],
+        cta: "Comprar Paquete",
+        popular: true,
+        variant: "default"
+      },
+      {
+        name: "Paquete Empresa",
+        price: "A medida",
+        period: "",
+        description: "Soluciones para grandes volúmenes.",
+        features: ["Créditos personalizados", "Precios por volumen", "Soporte dedicado 24/7"],
+        cta: "Contactar Ventas",
+        variant: "outline"
+      },
+    ];
       
     const CreditsUsageCard = () => {
         if(isAssistantsLoading) {
@@ -114,12 +113,12 @@ export default function CreditsPage() {
         return (
             <Card className="lg:col-span-4">
                 <CardHeader className="pb-2">
-                    <CardDescription>Créditos Usados este Ciclo</CardDescription>
-                    <CardTitle className="text-4xl">{usage.creditsUsed.toFixed(1)} / {usage.totalCredits.toFixed(0)} K</CardTitle>
+                    <CardDescription>Créditos Disponibles</CardDescription>
+                    <CardTitle className="text-4xl">{(totalCredits - usedCredits).toFixed(1)} K</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-xs text-muted-foreground">
-                        Tu ciclo se renueva el {usage.cycleEndDate}.
+                        Total de créditos del plan: {usage.totalCredits.toFixed(0)} K
                     </div>
                     <Progress value={percentageUsed} className="mt-2" />
                 </CardContent>
@@ -135,16 +134,16 @@ export default function CreditsPage() {
                         </DialogTrigger>
                         <DialogContent className="h-screen w-screen max-w-none sm:rounded-none flex flex-col">
                             <DialogHeader className="text-center pt-8">
-                                <DialogTitle className="text-3xl">Elige tu Plan</DialogTitle>
+                                <DialogTitle className="text-3xl">Paquetes de Créditos</DialogTitle>
                                 <DialogDescription>
-                                    Selecciona el plan que mejor se adapte a tus necesidades.
+                                    Recarga tu saldo para mantener a tus asistentes activos.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="flex-1 flex items-center justify-center py-4">
                                <Carousel
                                     opts={{
                                         align: "center",
-                                        loop: true,
+                                        loop: false,
                                     }}
                                     className="w-full max-w-4xl"
                                 >
@@ -218,11 +217,11 @@ export default function CreditsPage() {
                     <CardContent className="grid gap-4">
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Plan Actual</span>
-                            <span className="font-semibold">Gratuito</span>
+                            <span className="font-semibold">Plan Explorador</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Próximo Pago</span>
-                            <span className="font-semibold">$0.00</span>
+                            <span className="font-semibold">N/A</span>
                         </div>
                          <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Método de Pago</span>
@@ -268,3 +267,4 @@ export default function CreditsPage() {
         </>
     )
 }
+

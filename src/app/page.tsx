@@ -16,20 +16,20 @@ import { SkillsCarousel } from '@/components/layout/SkillsCarousel'
 export default function Home() {
   const plans = [
     {
-      name: "Gratuito",
+      name: "Explorador",
       price: "$0",
-      period: "/mes",
-      description: "Para empezar a explorar.",
-      features: ["Asistentes ilimitados", "500 Mensajes/mes", "Soporte básico"],
+      period: "para siempre",
+      description: "Ideal para probar la plataforma.",
+      features: ["1,000 créditos de bienvenida", "Asistentes ilimitados", "Soporte comunitario"],
       cta: "Empezar Gratis",
     },
     {
       name: "Manito Pro",
-      price: "$810",
-      period: "MXN/mes",
-      description: "Para negocios en crecimiento.",
-      features: ["Asistentes ilimitados", "5,000 Mensajes/mes", "Integraciones y API", "Soporte prioritario"],
-      cta: "Mejorar a Pro",
+      price: "$450",
+      period: "MXN / 5,000 créditos",
+      description: "Para negocios que escalan.",
+      features: ["Paquetes de créditos flexibles", "Integraciones y acceso API", "Soporte prioritario"],
+      cta: "Comprar Créditos",
       popular: true,
     },
     {
@@ -37,7 +37,7 @@ export default function Home() {
       price: "A medida",
       period: "",
       description: "Soluciones para grandes volúmenes.",
-      features: ["Asistentes ilimitados", "Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
+      features: ["Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
       cta: "Contactar Ventas",
     },
   ];
@@ -158,3 +158,4 @@ export default function Home() {
     </div>
   )
 }
+
