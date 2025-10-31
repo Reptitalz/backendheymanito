@@ -1,4 +1,5 @@
 
+
 import { BrainCircuit, ArrowRight, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,14 +13,8 @@ export default function AdminDashboardPage() {
       active: 3,
       total: 3,
       lastActivity: "Ahora mismo"
-    },
-    memory: {
-        used: 256, // in MB
-        total: 1024 // in MB (1 GB)
     }
   };
-
-  const memoryPercentage = (summaryData.memory.used / summaryData.memory.total) * 100;
 
   return (
     <>
