@@ -20,15 +20,16 @@ export default function Home() {
       price: "$0",
       period: "para siempre",
       description: "Ideal para probar la plataforma.",
-      features: ["1,000 créditos de bienvenida", "Asistentes ilimitados", "Soporte comunitario"],
+      features: ["1,000 créditos de bienvenida", "1 Asistente", "Soporte comunitario"],
       cta: "Empezar Gratis",
+      variant: "outline"
     },
     {
       name: "Manito Pro",
       price: "$450",
       period: "MXN / 5,000 créditos",
       description: "Para negocios que escalan.",
-      features: ["Paquetes de créditos flexibles", "Integraciones y acceso API", "Soporte prioritario"],
+      features: ["~5,000 Mensajes", "Asistentes ilimitados", "Integraciones y acceso API", "Soporte prioritario"],
       cta: "Comprar Créditos",
       popular: true,
     },
@@ -39,17 +40,18 @@ export default function Home() {
       description: "Soluciones para grandes volúmenes.",
       features: ["Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
       cta: "Contactar Ventas",
+      variant: "outline"
     },
   ];
 
   const faqItems = [
     {
         question: "¿Puedo cambiar de plan en cualquier momento?",
-        answer: "¡Por supuesto! Puedes mejorar, degradar o cancelar tu plan en cualquier momento desde el panel de control. Los cambios se aplicarán al inicio de tu próximo ciclo de facturación."
+        answer: "¡Por supuesto! Puedes comprar paquetes de créditos en cualquier momento. El plan gratuito te da una base y puedes recargar cuando lo necesites."
     },
     {
         question: "¿Qué pasa si consumo todos mis créditos?",
-        answer: "Si te quedas sin créditos, tus asistentes se pausarán temporalmente. Puedes comprar más créditos en cualquier momento para reactivarlos instantáneamente, o esperar a que tu plan se renueve."
+        answer: "Si te quedas sin créditos, tus asistentes se pausarán temporalmente. Puedes comprar más créditos en cualquier momento para reactivarlos instantáneamente."
     },
     {
         question: "¿Los asistentes pueden realizar llamadas de voz?",
@@ -122,7 +124,9 @@ export default function Home() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>{plan.cta}</Button>
+                    <Button asChild className="w-full" variant={plan.popular ? "default" : "outline"}>
+                        <Link href="/register">{plan.cta}</Link>
+                    </Button>
                   </CardFooter>
                 </Card>
               </div>
@@ -158,4 +162,3 @@ export default function Home() {
     </div>
   )
 }
-

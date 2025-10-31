@@ -62,6 +62,16 @@ export default function CreditsPage() {
     
     const plans = [
       {
+        name: "Plan Gratuito",
+        price: "Activado",
+        period: "",
+        description: "1,000 créditos para empezar.",
+        features: ["~1,000 Mensajes", "1 Asistente", "Soporte comunitario"],
+        cta: "Tu Plan Actual",
+        variant: "outline",
+        disabled: true
+      },
+      {
         name: "Paquete Básico",
         price: "$450",
         period: "MXN",
@@ -267,4 +277,3 @@ export default function CreditsPage() {
         </>
     )
 }
-
