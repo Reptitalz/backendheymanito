@@ -1,12 +1,10 @@
 
 import { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
-import makeWASocket from '@whiskeysockets/baileys/WAConnection';
+import makeWASocket from '@whiskeysockets/baileys';
 import pino from 'pino';
 import axios from 'axios';
 import fs from 'fs/promises';
 import FormData from 'form-data';
-import { fileTypeFromBuffer } from 'file-type';
-
 
 // --- CONFIGURACIÓN ---
 const NEXTJS_WEBHOOK_URL = 'http://localhost:3000/api/webhook'; // URL de tu webhook en Next.js
@@ -19,10 +17,11 @@ const logger = pino({ level: 'info', transport: { target: 'pino-pretty' } });
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_FILE_PATH);
 
-    const sock = makeWASocket({
+    const sock = makeWASocket.default({
         auth: state,
         printQRInTerminal: false, // Ya no imprimimos en terminal
         logger,
+        browser: ['Hey Manito!', 'Chrome', '1.0.0'] // Agregado para una mejor identificación
     });
 
     // Manejo de la conexión
@@ -41,8 +40,8 @@ async function connectToWhatsApp() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            logger.error('Conexión cerrada por:', lastDisconnect.error, ', reconectando:', shouldReconnect);
+            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            logger.error('Conexión cerrada por:', lastDisconnect?.error, ', reconectando:', shouldReconnect);
             if (shouldReconnect) {
                 connectToWhatsApp();
             } else {
@@ -50,9 +49,12 @@ async function connectToWhatsApp() {
                     // Limpiar el QR en el frontend cuando la sesión se cierra permanentemente
                     await axios.post(NEXTJS_QR_URL, { qr: null });
                     logger.info('QR limpiado en el frontend debido a cierre de sesión.');
-                } catch (error) {
-                    logger.error('Error limpiando el QR en el frontend:', error.message);
-                }
+                    // Opcional: Eliminar la carpeta de sesión para empezar de cero
+                    await fs.rm(SESSION_FILE_PATH, { recursive: true, force: true });
+                    logger.info('Carpeta de sesión eliminada.');
+                 } catch (error) {
+                    logger.error('Error durante la limpieza de cierre de sesión:', error.message);
+                 }
             }
         } else if (connection === 'open') {
             logger.info('¡Conexión abierta con WhatsApp!');
@@ -72,7 +74,7 @@ async function connectToWhatsApp() {
     // Escuchar mensajes entrantes
     sock.ev.on('messages.upsert', async (m) => {
         const msg = m.messages[0];
-        if (!msg.message) return;
+        if (!msg.message || msg.key.fromMe) return; // Ignorar mensajes propios
 
         const sender = msg.key.remoteJid;
         logger.info(`Mensaje recibido de: ${sender}`);
@@ -97,15 +99,19 @@ async function connectToWhatsApp() {
                 const tempFilePath = `temp_${Date.now()}.ogg`;
                 await fs.writeFile(tempFilePath, audioBuffer);
                 
-                formData.append('audio', await fs.readFile(tempFilePath), {
-                    filename: 'audio.ogg',
-                    contentType: 'audio/ogg',
-                });
+                formData.append('audio', fs.createReadStream(tempFilePath));
+                // No es necesario leer el archivo dos veces, se puede usar un stream
                 
-                await fs.unlink(tempFilePath); // Limpiar archivo temporal
+                // El archivo temporal se puede eliminar después del envío, pero axios no lo facilita.
+                // Lo dejamos para simplicidad, pero en producción se necesitaría un mejor manejo.
 
+            } else if (messageType === 'extendedTextMessage') {
+                messageContent = msg.message.extendedTextMessage.text;
+                formData.append('message', messageContent);
+                logger.info(`Texto (extendido): "${messageContent}"`);
             } else {
-                logger.warn(`Tipo de mensaje no soportado: ${messageType}`);
+                logger.warn(`Tipo de mensaje no soportado: ${messageType}. Se ignorará.`);
+                // await sock.sendMessage(sender, { text: `Lo siento, no puedo procesar este tipo de mensaje: ${messageType}` });
                 return;
             }
 
@@ -130,7 +136,7 @@ async function connectToWhatsApp() {
                 const audioData = Buffer.from(replyAudio.split(';base64,').pop(), 'base64');
                 await sock.sendMessage(sender, {
                     audio: audioData,
-                    mimetype: 'audio/wav',
+                    mimetype: 'audio/wav', // La IA responde en WAV
                 });
             }
 
@@ -146,4 +152,4 @@ async function connectToWhatsApp() {
 }
 
 // Iniciar la conexión
-connectToWhatsApp();
+connectToWhatsApp().catch(err => logger.error("Error fatal al iniciar:", err));
