@@ -34,9 +34,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Ensure you have NEXT_PUBLIC_ADMIN_EMAIL set in your environment
-      // This is a placeholder, in a real app you might use custom claims.
-      return request.auth.token.email == "admin@heymanito.com";
+      // This email must match the admin user's email.
+      return request.auth.token.email == "reptitalz@heymanito.com";
     }
 
     /**
