@@ -34,15 +34,14 @@ const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm md:hidden z-50">
             <nav className={cn(
-                'flex items-center justify-between h-16 px-4'
+                'grid grid-cols-4 items-center justify-around h-16'
             )}>
                 {navLinks.map(link => {
-                    const href = link.href;
-                    const isActive = pathname === href;
+                    const isActive = pathname === link.href;
                     return (
-                        <Link key={`${href}-${link.label}-mobile`} href={href} className={cn('flex flex-row items-center justify-center gap-2 transition-colors h-full text-xs px-2', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
+                        <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={cn('flex flex-col items-center justify-center gap-1 transition-colors h-full', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
                             <link.icon className="h-5 w-5" />
-                            <span className="font-medium">{link.label}</span>
+                            <span className="text-xs font-medium">{link.label}</span>
                         </Link>
                     )
                 })}
