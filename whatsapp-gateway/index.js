@@ -7,8 +7,8 @@ import fs from 'fs/promises';
 import FormData from 'form-data';
 
 // --- CONFIGURACIÓN ---
-const NEXTJS_WEBHOOK_URL = 'http://localhost:3000/api/webhook'; // URL de tu webhook en Next.js
-const NEXTJS_QR_URL = 'http://localhost:3000/api/qr'; // URL para enviar el QR
+const NEXTJS_WEBHOOK_URL = 'https://studio--studio-1128284178-7d125.us-central1.hosted.app/api/webhook'; // URL de tu webhook en Next.js
+const NEXTJS_QR_URL = 'https://studio--studio-1128284178-7d125.us-central1.hosted.app/api/qr'; // URL para enviar el QR
 const SESSION_FILE_PATH = './wa-session';
 // --- FIN CONFIGURACIÓN ---
 
