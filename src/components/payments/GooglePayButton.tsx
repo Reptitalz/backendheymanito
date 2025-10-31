@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -20,7 +19,13 @@ const GooglePayButton: React.FC<GooglePayButtonProps> = ({ plan }) => {
     const { toast } = useToast();
 
     useEffect(() => {
-        if (typeof window === 'undefined' || !(window as any).google || !(window as any).google.payments) {
+        // Only run this logic in the browser AND if it's in a top-level context (not an iframe)
+        if (typeof window === 'undefined' || window.self !== window.top) {
+            console.warn("Google Pay button not rendered: not in a top-level browsing context.");
+            return;
+        }
+
+        if (!(window as any).google || !(window as any).google.payments) {
             console.warn("Google Pay script not loaded.");
             return;
         }
