@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import Image from "next/image";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from "@/firebase";
 import { collection, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -81,33 +81,47 @@ export default function AsistentesPage() {
   };
   
   const handleSaveChanges = async () => {
-    if (!editingAssistant || !user) return;
-    try {
-      const assistantRef = doc(firestore, 'users', user.uid, 'assistants', editingAssistant.id);
-      await updateDoc(assistantRef, {
-        name: editedName,
-        image: editedImage,
-        lastUpdate: serverTimestamp()
+    if (!editingAssistant || !user || !firestore) return;
+    
+    const assistantRef = doc(firestore, 'users', user.uid, 'assistants', editingAssistant.id);
+    const updatedData = {
+      name: editedName,
+      image: editedImage,
+      lastUpdate: serverTimestamp()
+    };
+
+    updateDoc(assistantRef, updatedData)
+      .then(() => {
+        toast({ title: "Asistente actualizado", description: "Los cambios se han guardado correctamente." });
+        setIsEditModalOpen(false);
+        setEditingAssistant(null);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: assistantRef.path,
+          operation: 'update',
+          requestResourceData: updatedData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-      toast({ title: "Asistente actualizado", description: "Los cambios se han guardado correctamente." });
-      setIsEditModalOpen(false);
-      setEditingAssistant(null);
-    } catch (error) {
-      console.error("Error updating assistant:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar el asistente." });
-    }
   };
 
   const handleDelete = async (assistantId: string) => {
-    if (!user) return;
-    try {
-        const assistantRef = doc(firestore, 'users', user.uid, 'assistants', assistantId);
-        await deleteDoc(assistantRef);
+    if (!user || !firestore) return;
+    
+    const assistantRef = doc(firestore, 'users', user.uid, 'assistants', assistantId);
+
+    deleteDoc(assistantRef)
+      .then(() => {
         toast({ title: "Asistente eliminado", description: "El asistente ha sido eliminado permanentemente." });
-    } catch (error) {
-        console.error("Error deleting assistant:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el asistente." });
-    }
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: assistantRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   if (isUserLoading || isAssistantsLoading) {
@@ -353,9 +367,6 @@ export default function AsistentesPage() {
                     <p className="mt-2 text-sm text-muted-foreground">
                         Crea tu primer asistente para empezar a automatizar tus conversaciones.
                     </p>
-                    <Button asChild className="mt-6">
-                        <Link href="/dashboard/asistentes/crear">Crear Asistente</Link>
-                    </Button>
                 </CardContent>
             </Card>
         )}
