@@ -131,6 +131,7 @@ export default function MonitorPage() {
             };
             fetchUserNames();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [allAssistants, firestore]);
 
 
