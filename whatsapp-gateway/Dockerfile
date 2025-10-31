@@ -1,20 +1,23 @@
-# Usa una imagen base de Node.js ligera y optimizada
+# 1. Usa una imagen base oficial de Node.js (elige una versión LTS)
 FROM node:18-slim
 
-# Establece el directorio de trabajo dentro del contenedor
+# 2. Establece el directorio de trabajo dentro del contenedor
 WORKDIR /usr/src/app
 
-# Copia los archivos de definición de dependencias
+# 3. Copia los archivos de definición de dependencias
+# Se copian primero para aprovechar el cache de capas de Docker.
+# Si no cambian las dependencias, no se volverá a ejecutar `npm install`.
 COPY package*.json ./
 
-# Instala las dependencias de producción
-RUN npm install --omit=dev
+# 4. Instala las dependencias del proyecto
+# Usamos --only=production para no instalar dependencias de desarrollo (como pino-pretty)
+RUN npm install --only=production
 
-# Copia el resto del código de la aplicación
+# 5. Copia el resto del código de la aplicación
 COPY . .
 
-# Expone el puerto que usará la aplicación (si aplica, aunque Baileys no expone un puerto HTTP)
-# EXPOSE 8080
+# 6. Expone el puerto en el que correrá la aplicación (Cloud Run usa 8080 por defecto)
+EXPOSE 8080
 
-# Comando para ejecutar la aplicación cuando el contenedor inicie
-CMD [ "npm", "start" ]
+# 7. Define el comando para iniciar la aplicación
+CMD [ "node", "index.js" ]
