@@ -21,6 +21,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
     /**
      * @description Enforces user-ownership for user profiles. Only the authenticated user can read, update, or delete their own profile.
      * @path /users/{userId}
@@ -31,18 +43,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false; // User listing is disallowed.
       allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
@@ -75,18 +75,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/subscriptions/{subscriptionId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
-
-        function isOwner(userId) {
-          return request.auth.uid == userId;
-        }
-
-        function isExistingOwner(userId) {
-          return isOwner(userId) && resource != null;
-        }
-
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
@@ -104,18 +92,6 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/assistants/{assistantId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
@@ -128,18 +104,6 @@ service cloud.firestore {
      * @path /users/{userId}/clients/{clientId}
      */
     match /users/{userId}/clients/{clientId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
