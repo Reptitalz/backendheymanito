@@ -20,6 +20,11 @@ const GooglePayButton: React.FC<GooglePayButtonProps> = ({ plan }) => {
     const { toast } = useToast();
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !(window as any).google || !(window as any).google.payments) {
+            console.warn("Google Pay script not loaded.");
+            return;
+        }
+
         const googlePayClient = new (window as any).google.payments.api.PaymentsClient({
             environment: 'TEST', // Use 'PRODUCTION' in production
         });
@@ -65,42 +70,46 @@ const GooglePayButton: React.FC<GooglePayButtonProps> = ({ plan }) => {
             },
         };
 
-        googlePayClient.isReadyToPay({
-            apiVersion: 2,
-            apiVersionMinor: 0,
-            allowedPaymentMethods: [baseCardPaymentMethod],
-        }).then((response: { result: any; }) => {
-            if (response.result && buttonRef.current) {
-                const button = googlePayClient.createButton({
-                    onClick: () => {
-                        googlePayClient.loadPaymentData(paymentDataRequest)
-                            .then((paymentData: any) => {
-                                // This is where you would process the payment on your backend
-                                // For now, we'll just simulate success
-                                console.log('Payment data:', paymentData);
-                                toast({
-                                    title: "¡Pago Exitoso!",
-                                    description: `Has comprado el ${plan.name}. Los créditos se añadirán a tu cuenta.`,
+        try {
+            googlePayClient.isReadyToPay({
+                apiVersion: 2,
+                apiVersionMinor: 0,
+                allowedPaymentMethods: [baseCardPaymentMethod],
+            }).then((response: { result: any; }) => {
+                if (response.result && buttonRef.current) {
+                    const button = googlePayClient.createButton({
+                        onClick: () => {
+                            googlePayClient.loadPaymentData(paymentDataRequest)
+                                .then((paymentData: any) => {
+                                    // This is where you would process the payment on your backend
+                                    // For now, we'll just simulate success
+                                    console.log('Payment data:', paymentData);
+                                    toast({
+                                        title: "¡Pago Exitoso!",
+                                        description: `Has comprado el ${plan.name}. Los créditos se añadirán a tu cuenta.`,
+                                    });
+                                })
+                                .catch((err: any) => {
+                                    console.error('Error loading payment data:', err);
+                                    toast({
+                                        variant: 'destructive',
+                                        title: 'Error en el Pago',
+                                        description: 'No se pudo completar la transacción. Por favor, inténtalo de nuevo.',
+                                    });
                                 });
-                            })
-                            .catch((err: any) => {
-                                console.error('Error loading payment data:', err);
-                                toast({
-                                    variant: 'destructive',
-                                    title: 'Error en el Pago',
-                                    description: 'No se pudo completar la transacción. Por favor, inténtalo de nuevo.',
-                                });
-                            });
-                    },
-                    buttonColor: 'default',
-                    buttonType: 'buy', 
-                    buttonSizeMode: 'fill',
-                });
-                buttonRef.current.appendChild(button);
-            }
-        }).catch((err: any) => {
-            console.error('Error checking ready to pay:', err);
-        });
+                        },
+                        buttonColor: 'default',
+                        buttonType: 'buy', 
+                        buttonSizeMode: 'fill',
+                    });
+                    buttonRef.current.appendChild(button);
+                }
+            }).catch((err: any) => {
+                console.error('Google Pay isReadyToPay check failed:', err);
+            });
+        } catch (err) {
+             console.error('Error initializing Google Pay button. This can happen in non-secure or iframe contexts:', err);
+        }
 
         // Cleanup function
         return () => {
