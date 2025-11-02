@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 
-const words = ['WhatsApp', 'Bots'];
+const words = ['WhatsApp', 'Bot'];
 const animationDuration = 2500; // ms
 
 export function AnimatedHeadline() {
