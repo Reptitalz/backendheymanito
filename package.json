@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm:genkit:watch\" \"npm:next:dev\"",
+    "dev": "concurrently \"npm:genkit:watch\" \"npm:next:dev\" \"npm:wa:dev\"",
     "next:dev": "next dev --turbopack -p 9002",
-    "wa:dev": "node whatsapp-gateway/index.js",
+    "wa:dev": "node -r dotenv/config whatsapp-gateway/index.js",
     "genkit:dev": "genkit start --tsx src/ai/dev.ts",
     "genkit:watch": "genkit start --tsx --watch src/ai/dev.ts",
     "build": "NODE_ENV=production next build",
