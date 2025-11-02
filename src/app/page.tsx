@@ -22,7 +22,7 @@ export default function Home() {
       priceString: "$0",
       period: "para siempre",
       description: "Ideal para probar la plataforma.",
-      features: ["1,000 créditos de bienvenida", "1 Asistente", "Soporte comunitario"],
+      features: ["1,000 créditos de bienvenida", "Asistentes ilimitados (1 activo)", "Soporte comunitario"],
       cta: "Empezar Gratis",
       variant: "outline",
       isGooglePay: false
@@ -44,7 +44,7 @@ export default function Home() {
       priceString: "A medida",
       period: "",
       description: "Soluciones para grandes volúmenes.",
-      features: ["Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
+      features: ["Asistentes activos ilimitados", "Créditos personalizados", "Soporte dedicado 24/7", "Funciones avanzadas"],
       cta: "Contactar Ventas",
       variant: "outline",
       isGooglePay: false
@@ -54,7 +54,7 @@ export default function Home() {
   const faqItems = [
     {
         question: "¿Puedo cambiar de plan en cualquier momento?",
-        answer: "¡Por supuesto! Puedes comprar paquetes de créditos en cualquier momento. El plan gratuito te da una base y puedes recargar cuando lo necesites."
+        answer: "¡Por supuesto! Puedes comprar paquetes de créditos en any momento. El plan gratuito te da una base y puedes recargar cuando lo necesites."
     },
     {
         question: "¿Qué pasa si consumo todos mis créditos?",
