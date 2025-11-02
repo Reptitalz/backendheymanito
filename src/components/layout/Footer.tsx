@@ -1,5 +1,6 @@
 import { Bot } from 'lucide-react'
 import Link from 'next/link'
+import { SystemStatus } from './SystemStatus';
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -26,6 +27,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      <SystemStatus />
     </footer>
   )
 }
