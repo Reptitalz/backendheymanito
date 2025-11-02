@@ -14,6 +14,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+
+const loadingSteps = [
+    { progress: 0, message: "Inicializando..." },
+    { progress: 20, message: "Estableciendo conexión segura..." },
+    { progress: 50, message: "Solicitando código QR al servidor de Baileys..." },
+    { progress: 80, message: "Recibiendo datos del código..." },
+    { progress: 100, message: "¡Código recibido! Generando imagen..." },
+];
 
 export default function ConectarPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,7 +42,33 @@ export default function ConectarPage() {
 
     const [status, setStatus] = useState<'loading' | 'qr_received' | 'connected' | 'error' | 'already_connected'>('loading');
     const [linkedDevices, setLinkedDevices] = useState<{id: number, name: string, lastActive: string, icon: React.ElementType}[]>([]);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [loadingMessage, setLoadingMessage] = useState(loadingSteps[0].message);
 
+    useEffect(() => {
+        let progressInterval: NodeJS.Timeout;
+        if (status === 'loading') {
+            progressInterval = setInterval(() => {
+                setLoadingProgress(prev => {
+                    const nextProgress = prev + 2;
+                    const currentStep = loadingSteps.find((step, i) => {
+                        const nextStep = loadingSteps[i + 1];
+                        return nextProgress >= step.progress && (!nextStep || nextProgress < nextStep.progress);
+                    });
+                    if (currentStep) {
+                        setLoadingMessage(currentStep.message);
+                    }
+                    if (nextProgress >= 95) { // Stop before 100, wait for QR
+                        clearInterval(progressInterval);
+                        return 95;
+                    }
+                    return nextProgress;
+                });
+            }, 100);
+        }
+        return () => clearInterval(progressInterval);
+    }, [status]);
+    
     useEffect(() => {
         if (linkedDevices.length > 0) {
             setStatus('already_connected');
@@ -61,6 +96,8 @@ export default function ConectarPage() {
                 const data = await res.json();
 
                 if (data.qr) {
+                    setLoadingProgress(100);
+                    setLoadingMessage("¡Código recibido! Generando imagen...");
                     setStatus('qr_received');
                     if (canvasRef.current) {
                         QRCode.toCanvas(canvasRef.current, data.qr, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
@@ -88,6 +125,8 @@ export default function ConectarPage() {
     const handleDisconnect = (deviceId: number) => {
         setLinkedDevices(devices => devices.filter(d => d.id !== deviceId));
         setStatus('loading');
+        setLoadingProgress(0);
+        setLoadingMessage(loadingSteps[0].message);
     }
     
     const getTitle = () => {
@@ -136,17 +175,11 @@ export default function ConectarPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="h-64 w-64 flex items-center justify-center bg-gray-100 rounded-lg">
+                            <div className="h-64 w-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
                                 {status === 'loading' && (
-                                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                        <div role="status">
-                                            <svg aria-hidden="true" className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-primary" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
-                                                <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0492C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 40.0157 91.5421 44.378 93.9676 39.0409Z" fill="currentFill"/>
-                                            </svg>
-                                            <span className="sr-only">Cargando...</span>
-                                        </div>
-                                        Esperando código QR...
+                                    <div className="flex flex-col items-center gap-4 text-muted-foreground w-56">
+                                        <Progress value={loadingProgress} className="w-full h-2" />
+                                        <p className="text-xs text-center">{loadingMessage}</p>
                                     </div>
                                 )}
                                 <canvas ref={canvasRef} className={status === 'qr_received' ? 'block' : 'hidden'} />
