@@ -12,13 +12,19 @@ import path from 'path';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 const NEXTJS_WEBHOOK_URL = `${BASE_URL}/api/webhook`;
 const NEXTJS_QR_URL = `${BASE_URL}/api/qr`;
-const NEXTJS_STATUS_URL = `${BASE_URL}/api/status`; // Nueva URL para el estado
+const NEXTJS_STATUS_URL = `${BASE_URL}/api/status`;
 const SESSION_FILE_PATH = path.join(os.tmpdir(), 'wa-session');
 // --- FIN CONFIGURACIÓN ---
 
-const logger = pino({ level: 'info', transport: { target: 'pino-pretty' } });
+// Configuración de Pino para evitar conflictos.
+const logger = pino({
+    level: 'info',
+    transport: {
+        target: 'pino-pretty'
+    }
+});
 
-// Nueva función para actualizar el estado del gateway
+
 async function updateGatewayStatus(status: 'connected' | 'disconnected' | 'qr' | 'error') {
     try {
         await axios.post(NEXTJS_STATUS_URL, { status });
@@ -38,13 +44,12 @@ async function connectToWhatsApp() {
         browser: ['Hey Manito!', 'Chrome', '1.0.0']
     });
 
-    // Manejo de la conexión
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
             logger.info('Nuevo código QR generado. Enviando al frontend...');
-            await updateGatewayStatus('qr'); // Actualiza estado a 'qr'
+            await updateGatewayStatus('qr');
             try {
                 await axios.post(NEXTJS_QR_URL, { qr });
                 logger.info('Código QR enviado al frontend exitosamente.');
@@ -73,7 +78,7 @@ async function connectToWhatsApp() {
             }
         } else if (connection === 'open') {
             logger.info('¡Conexión abierta con WhatsApp!');
-            await updateGatewayStatus('connected'); // Actualiza estado a 'connected'
+            await updateGatewayStatus('connected');
              try {
                 await axios.post(NEXTJS_QR_URL, { qr: null });
                 logger.info('Conexión exitosa, QR limpiado en el frontend.');
@@ -83,13 +88,11 @@ async function connectToWhatsApp() {
         }
     });
 
-    // Guardar credenciales
     sock.ev.on('creds.update', saveCreds);
 
-    // Escuchar mensajes entrantes
     sock.ev.on('messages.upsert', async (m) => {
         const msg = m.messages[0];
-        if (!msg.message || msg.key.fromMe) return; // Ignorar mensajes propios
+        if (!msg.message || msg.key.fromMe) return;
 
         const sender = msg.key.remoteJid;
         logger.info(`Mensaje recibido de: ${sender}`);
@@ -110,7 +113,7 @@ async function connectToWhatsApp() {
                 logger.info('Mensaje de audio detectado. Descargando...');
                 const audioBuffer = await sock.downloadMediaMessage(msg);
                 
-                const tempFilePath = `temp_${Date.now()}.ogg`;
+                const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}.ogg`);
                 await fs.writeFile(tempFilePath, audioBuffer);
                 
                 formData.append('audio', fs.createReadStream(tempFilePath));
@@ -157,8 +160,7 @@ async function connectToWhatsApp() {
     return sock;
 }
 
-// Iniciar la conexión e informar el estado inicial
-updateGatewayStatus('disconnected'); // Estado inicial antes de conectar
+updateGatewayStatus('disconnected');
 connectToWhatsApp().catch(err => {
     logger.error("Error fatal al iniciar:", err)
     updateGatewayStatus('error');
