@@ -124,7 +124,7 @@ export function SystemStatus() {
         <div className="container mx-auto px-4 md:px-8 py-2 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
                 <StatusIndicator label="Frontend" status={frontendStatus} tooltip={getFrontendTooltip()} />
-                <StatusIndicator label="Gateway" status={gatewayStatus} tooltip={getGatewayTooltip()} />
+                <StatusIndicator label="Gateway (Cloud Run)" status={gatewayStatus} tooltip={getGatewayTooltip()} />
             </div>
             <div className="text-xs text-gray-500">
                 {lastUpdated && `Última act: ${lastUpdated}`}
