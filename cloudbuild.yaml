@@ -28,7 +28,6 @@ steps:
 # Guardar la URL de la imagen en los metadatos de la compilación
 images:
 - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
-
 # Usar las variables de sustitución predeterminadas del activador
 options:
   logging: CLOUD_LOGGING_ONLY
