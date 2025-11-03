@@ -1,25 +1,20 @@
-# 1. Base oficial de Node.js (slim para que sea liviana)
-FROM node:20-slim
+# 1. Base oficial de Node.js con Git incluido
+FROM node:20
 
 # 2. Directorio de trabajo dentro del contenedor
 WORKDIR /usr/src/app
 
-# 3. Instalar git y certificados (necesarios para npm con repositorios Git)
-RUN apt-get update && \
-    apt-get install -y git ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-# 4. Copiar package.json y package-lock.json (si existe) primero para cachear npm install
+# 3. Copiar package.json y package-lock.json primero
 COPY package*.json ./
 
-# 5. Instalar dependencias de producción (más rápido y liviano)
+# 4. Instalar dependencias de producción
 RUN npm ci --omit=dev
 
-# 6. Copiar el resto de la aplicación
+# 5. Copiar el resto de la aplicación
 COPY . .
 
-# 7. Puerto que usará la app en Cloud Run
+# 6. Puerto que usará la app en Cloud Run
 EXPOSE 8080
 
-# 8. Comando para iniciar la aplicación
+# 7. Comando para iniciar la aplicación
 CMD ["node", "index.js"]
