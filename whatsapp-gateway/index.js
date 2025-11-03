@@ -10,7 +10,7 @@ import path from 'path';
 import http from 'http';
 
 // === CONFIGURACIÓN ===
-const NEXTJS_APP_URL = process.env.NEXTJS_APP_URL;
+const NEXTJS_APP_URL = "https://studio--studio-1128284178-7d125.us-central1.hosted.app";
 const NEXTJS_WEBHOOK_URL = `${NEXTJS_APP_URL}/api/webhook`;
 const NEXTJS_QR_URL = `${NEXTJS_APP_URL}/api/qr`;
 const NEXTJS_STATUS_URL = `${NEXTJS_APP_URL}/api/status`;
@@ -167,3 +167,6 @@ server.listen(PORT, () => {
 // Evita que el contenedor muera por errores no manejados
 process.on('unhandledRejection', (r) => logger.error('Unhandled Rejection:', r));
 process.on('uncaughtException', (e) => logger.error('Uncaught Exception:', e));
+
+
+logger.info('NEXTJS_APP_URL:', process.env.NEXTJS_APP_URL);
