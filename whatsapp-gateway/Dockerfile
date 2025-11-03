@@ -1,18 +1,22 @@
-# 1. Usa una imagen base oficial de Node.js
+# 1. Usar una imagen base de Node.js ligera
 FROM node:20-slim
 
-# 2. Establece el directorio de trabajo dentro del contenedor
+# 2. Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /usr/src/app
 
-# 3. Copia los archivos desde la subcarpeta
-COPY whatsapp-gateway/package*.json ./
-RUN npm install --omit=dev
+# 3. Copiar los archivos de definición de dependencias
+# ¡Corregido! No se necesita el prefijo 'whatsapp-gateway/' aquí.
+COPY package*.json ./
 
-# 4. Copia el resto del código
-COPY whatsapp-gateway/ ./
+# 4. Instalar las dependencias del proyecto
+RUN npm install
 
-# 5. Expone el puerto
+# 5. Copiar el resto del código de la aplicación
+# ¡Corregido! No se necesita el prefijo 'whatsapp-gateway/' aquí.
+COPY . .
+
+# 6. Exponer el puerto en el que la aplicación se ejecutará (el mismo que en index.js)
 EXPOSE 8080
 
-# 6. Comando de inicio
-CMD ["node", "index.js"]
+# 7. El comando para iniciar la aplicación cuando el contenedor se inicie
+CMD [ "node", "index.js" ]
