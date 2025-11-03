@@ -1,4 +1,7 @@
-// orchestrator.js
+// ESTE ARCHIVO YA NO ES NECESARIO SI EL GATEWAY SE DESPLIEGA POR SEPARADO.
+// Lo mantendré por si decides volver a la arquitectura monolítica.
+// Puedes eliminarlo de forma segura si te quedas con Cloud Run para el gateway.
+
 const { spawn } = require('child_process');
 const path = require('path');
 
@@ -23,28 +26,10 @@ nextServer.on('close', (code) => {
   if (code !== 0) process.exit(code);
 });
 
-// === START WHATSAPP GATEWAY ===
-console.log('🤖 Starting WhatsApp gateway...');
-const waGateway = spawn('node', ['-r', 'dotenv/config', waGatewayPath], {
-  stdio: 'inherit',
-  env: { ...process.env }
-});
-
-waGateway.on('error', (err) => {
-  console.error('❌ Failed to start WhatsApp gateway:', err);
-  process.exit(1);
-});
-
-waGateway.on('close', (code) => {
-  console.log(`WhatsApp gateway exited with code ${code}`);
-  if (code !== 0) process.exit(code);
-});
-
 // === GRACEFUL SHUTDOWN ===
 const shutdown = (signal) => {
   console.log(`Caught ${signal}, shutting down gracefully...`);
   nextServer.kill(signal);
-  waGateway.kill(signal);
   setTimeout(() => process.exit(), 500);
 };
 

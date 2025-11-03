@@ -7,17 +7,15 @@ import fs from 'fs/promises';
 import FormData from 'form-data';
 import os from 'os';
 import path from 'path';
+import http from 'http';
 
 // --- CONFIGURACIÓN ---
-// En desarrollo, el gateway se comunica con Next.js a través de 127.0.0.1.
-// En producción, App Hosting enruta las solicitudes al servicio correcto.
-const BASE_URL = process.env.NODE_ENV === 'production' 
-  ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002' 
-  : 'http://127.0.0.1:9002';
+// Ahora, la URL del frontend se debe configurar como una variable de entorno en Cloud Run.
+const NEXTJS_APP_URL = process.env.NEXTJS_APP_URL || 'http://127.0.0.1:9002';
 
-const NEXTJS_WEBHOOK_URL = `${BASE_URL}/api/webhook`;
-const NEXTJS_QR_URL = `${BASE_URL}/api/qr`;
-const NEXTJS_STATUS_URL = `${BASE_URL}/api/status`;
+const NEXTJS_WEBHOOK_URL = `${NEXTJS_APP_URL}/api/webhook`;
+const NEXTJS_QR_URL = `${NEXTJS_APP_URL}/api/qr`;
+const NEXTJS_STATUS_URL = `${NEXTJS_APP_URL}/api/status`;
 const SESSION_FILE_PATH = path.join(os.tmpdir(), 'wa-session');
 // --- FIN CONFIGURACIÓN ---
 
@@ -45,7 +43,7 @@ async function connectToWhatsApp() {
         auth: state,
         printQRInTerminal: false,
         logger,
-        browser: ['Hey Manito!', 'Chrome', '1.0.0']
+        browser: ['Hey Manito!', 'Cloud Run', '2.0']
     });
 
     sock.ev.on('connection.update', async (update) => {
@@ -164,8 +162,25 @@ async function connectToWhatsApp() {
     return sock;
 }
 
-updateGatewayStatus('disconnected');
-connectToWhatsApp().catch(err => {
-    logger.error("Error fatal al iniciar:", err)
-    updateGatewayStatus('error');
+// ---- Servidor HTTP para Cloud Run ----
+const server = http.createServer((req, res) => {
+  // Cloud Run necesita un servidor HTTP que responda a las comprobaciones de estado.
+  if (req.url === '/_health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  logger.info(`Servidor HTTP de health check escuchando en el puerto ${PORT}`);
+  // Iniciar la conexión a WhatsApp después de que el servidor HTTP esté listo.
+  updateGatewayStatus('disconnected');
+  connectToWhatsApp().catch(err => {
+      logger.error("Error fatal al iniciar:", err)
+      updateGatewayStatus('error');
+  });
 });
