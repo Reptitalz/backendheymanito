@@ -70,14 +70,11 @@ export function HowItWorks() {
                     viewport={{ once: true, amount: 0.5 }}
                     variants={textVariants}
                 >
-                    <motion.h2 variants={textVariants} className="text-4xl md:text-6xl font-bold font-headline mb-4 tracking-tighter">
-                        Tu Aventura IA Comienza
+                    <motion.h2 variants={textVariants} className="text-3xl md:text-4xl font-bold font-headline mb-4">
+                        Tu Aventura IA en 3 simples pasos
                     </motion.h2>
-                    <motion.p variants={textVariants} className="text-5xl md:text-7xl font-bold font-headline text-primary mb-6">
-                        en 3... 2... 1...
-                    </motion.p>
                     <motion.p variants={textVariants} className="text-muted-foreground text-lg">
-                        Lanzar tu propio asistente de WhatsApp nunca fue tan fácil. Sigue estos simples pasos:
+                        Lanzar tu propio asistente de WhatsApp nunca fue tan fácil.
                     </motion.p>
                 </motion.div>
                 
