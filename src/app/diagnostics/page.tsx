@@ -172,14 +172,7 @@ export default function DiagnosticsPage() {
                     status={gatewayStatus}
                     description={getGatewayDescription()}
                     icon={Smartphone}
-                >
-                    <CardFooter>
-                        <Button onClick={handleTestGateway} disabled={isTesting} className="w-full">
-                           {isTesting ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Beaker className="mr-2 h-4 w-4" />}
-                           {isTesting ? "Probando..." : "Prueba de Conexión"}
-                        </Button>
-                    </CardFooter>
-                </StatusCard>
+                />
             </div>
         </div>
     );
