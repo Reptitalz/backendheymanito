@@ -27,7 +27,7 @@ const navLinks = [
   { href: "/dashboard/credits", label: "Créditos", icon: CreditCard },
 ];
 
-const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
+const MobileBottomNav = ({ isSpecialPage, assistantCount }: { isSpecialPage: boolean, assistantCount: number }) => {
     const pathname = usePathname();
 
     if (isSpecialPage) return null;
@@ -38,11 +38,17 @@ const MobileBottomNav = ({ isSpecialPage }: { isSpecialPage: boolean }) => {
                 'grid grid-cols-4 items-center justify-around h-16'
             )}>
                 {navLinks.map(link => {
-                    const isActive = pathname === link.href;
+                    const isActive = pathname.startsWith(link.href);
+                    const isAssistantsLink = link.href === '/dashboard/asistentes';
                     return (
-                        <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={cn('flex flex-col items-center justify-center gap-1 transition-colors h-full', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
+                        <Link key={`${link.href}-${link.label}-mobile`} href={link.href} className={cn('relative flex flex-col items-center justify-center gap-1 transition-colors h-full', isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary')}>
                             <link.icon className="h-5 w-5" />
                             <span className="text-xs font-medium">{link.label}</span>
+                             {isAssistantsLink && assistantCount > 0 && (
+                                <Badge className="absolute top-2 right-4 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                                    {assistantCount}
+                                </Badge>
+                            )}
                         </Link>
                     )
                 })}
@@ -274,7 +280,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main {...swipeHandlers} className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40 pb-20 md:pb-6">
           {children}
         </main>
-        <MobileBottomNav isSpecialPage={isSpecialPage} />
+        <MobileBottomNav isSpecialPage={isSpecialPage} assistantCount={assistantCount} />
       </div>
     </div>
   );
