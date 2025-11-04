@@ -6,8 +6,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Activity, Server, Smartphone, CheckCircle2, AlertTriangle, XCircle, Loader, Beaker } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 
 type Status = 'online' | 'degraded' | 'offline' | 'loading';
 
@@ -18,10 +16,10 @@ const statusConfig: Record<Status, { text: string; color: string; icon: React.El
     offline: { text: 'Fuera de Línea', color: 'text-red-500', icon: XCircle },
 };
 
-const StatusCard = ({ title, status, description, icon: Icon, children }: { title: string; status: Status; description: string, icon: React.ElementType, children?: React.ReactNode }) => {
+const StatusCard = ({ title, status, description, icon: Icon }: { title: string; status: Status; description: string, icon: React.ElementType }) => {
     const config = statusConfig[status];
     return (
-        <Card className="flex flex-col">
+        <Card>
             <CardHeader>
                 <div className="flex items-center gap-4">
                     <Icon className="h-8 w-8 text-muted-foreground" />
@@ -31,14 +29,13 @@ const StatusCard = ({ title, status, description, icon: Icon, children }: { titl
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1">
+            <CardContent>
                 <div className="flex items-center gap-3">
                     <config.icon className={cn("h-6 w-6", config.color, status === 'loading' && 'animate-spin')} />
                     <span className={cn("text-lg font-semibold", config.color)}>{config.text}</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">{description}</p>
             </CardContent>
-            {children}
         </Card>
     )
 }
@@ -47,8 +44,6 @@ export default function DiagnosticsPage() {
     const [frontendStatus, setFrontendStatus] = useState<Status>('online'); // Frontend is online if page loads
     const [gatewayStatus, setGatewayStatus] = useState<Status>('loading');
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-    const [isTesting, setIsTesting] = useState(false);
-    const { toast } = useToast();
     
     const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
 
@@ -83,40 +78,6 @@ export default function DiagnosticsPage() {
 
         return () => clearInterval(intervalId);
     }, []);
-
-    const handleTestGateway = async () => {
-        setIsTesting(true);
-        try {
-            const response = await fetch(gatewayUrl);
-            const text = await response.text();
-            if (response.ok && text === 'OK') {
-                toast({
-                    title: '¡Éxito!',
-                    description: `El gateway respondió correctamente con "OK".`,
-                });
-                 // Force a status re-check after successful test
-                const statusRes = await fetch(`${gatewayUrl}/status`);
-                const statusData = await statusRes.json();
-                 switch (statusData.status) {
-                    case 'connected': setGatewayStatus('online'); break;
-                    case 'qr': setGatewayStatus('degraded'); break;
-                    default: setGatewayStatus('offline');
-                }
-            } else {
-                 throw new Error(`Respuesta inesperada: ${text}`);
-            }
-        } catch (error: any) {
-             toast({
-                variant: 'destructive',
-                title: 'Error de Conexión',
-                description: `No se pudo conectar con el gateway: ${error.message}`,
-            });
-            setGatewayStatus('offline');
-        } finally {
-            setIsTesting(false);
-            setLastUpdated(new Date().toLocaleString());
-        }
-    }
     
     const getGatewayDescription = () => {
         switch (gatewayStatus) {

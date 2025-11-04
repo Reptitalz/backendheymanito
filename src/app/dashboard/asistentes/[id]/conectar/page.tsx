@@ -75,19 +75,6 @@ export default function ConectarPage() {
             return;
         }
 
-        const clearQr = async () => {
-             try {
-                await fetch('/api/qr', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ qr: null }),
-                });
-             } catch (e) {
-                console.error("Could not clear QR on init");
-             }
-        }
-        clearQr();
-
         const interval = setInterval(async () => {
             try {
                 const res = await fetch('/api/qr');

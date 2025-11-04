@@ -160,7 +160,6 @@ const server = http.createServer((req, res) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   logger.info(`🚀 Servidor HTTP listo en el puerto ${PORT}`);
-  gatewayStatus = 'disconnected';
   connectToWhatsApp();
 });
 
