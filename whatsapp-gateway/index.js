@@ -59,9 +59,16 @@ const server = http.createServer((req, res) => {
   const assistantId = requestUrl.searchParams.get('assistantId');
 
   if (requestUrl.pathname === '/status') {
-    const botState = activeBots.get(assistantId);
+    let botState = activeBots.get(assistantId);
+    // Si el bot no se encuentra, créalo.
+    if (!botState) {
+        logger.info(`[${assistantId}] No encontrado en memoria. Iniciando instancia bajo demanda...`);
+        createBotInstance(assistantId);
+        botState = activeBots.get(assistantId); // Recupera el estado recién creado
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: botState ? botState.status : 'not_found' }));
+    res.end(JSON.stringify({ status: botState ? botState.status : 'loading' }));
+
   } else if (requestUrl.pathname === '/qr') {
     const botState = activeBots.get(assistantId);
     res.writeHead(200, { 'Content-Type': 'application/json' });
