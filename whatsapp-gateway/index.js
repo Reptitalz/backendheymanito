@@ -11,7 +11,7 @@ import path from 'path';
 import http from 'http';
 
 // === CONFIGURACIÓN ===
-const NEXTJS_APP_URL = "https://studio--studio-1128284178-7d125.us-central1.hosted.app";
+const NEXTJS_APP_URL = "https://heymanito.com";
 const NEXTJS_WEBHOOK_URL = `${NEXTJS_APP_URL}/api/webhook`;
 const SESSION_FILE_PATH = path.join(os.tmpdir(), 'wa-session');
 // =====================
@@ -23,6 +23,17 @@ const logger = pino({
   level: 'info',
   transport: { target: 'pino-pretty' }
 });
+
+async function cleanSession() {
+    try {
+        await fsp.rm(SESSION_FILE_PATH, { recursive: true, force: true });
+        logger.info('Sesión anterior eliminada para un inicio limpio.');
+    } catch (e) {
+        if (e.code !== 'ENOENT') { // ENOENT means the file/folder doesn't exist, which is fine.
+            logger.error('Error limpiando la sesión antigua:', e.message);
+        }
+    }
+}
 
 async function connectToWhatsApp() {
   try {
@@ -55,12 +66,10 @@ async function connectToWhatsApp() {
         if (shouldReconnect) {
           setTimeout(connectToWhatsApp, 3000);
         } else {
-          try {
-            await fsp.rm(SESSION_FILE_PATH, { recursive: true, force: true });
-            logger.info('Sesión eliminada tras logout');
-          } catch (e) {
-            logger.error('Error limpiando sesión:', e.message);
-          }
+          // Logged out, clean up session
+          await cleanSession();
+          // Attempt to reconnect to get a new QR code
+          setTimeout(connectToWhatsApp, 3000);
         }
       } else if (connection === 'open') {
         logger.info('✅ Conectado con WhatsApp');
@@ -133,14 +142,15 @@ async function connectToWhatsApp() {
 // === Servidor HTTP para Cloud Run ===
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-control-allow-headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
     return;
   }
+
 
   if (req.url === '/status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -158,8 +168,9 @@ const server = http.createServer((req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   logger.info(`🚀 Servidor HTTP listo en el puerto ${PORT}`);
+  await cleanSession(); // Limpia la sesión al iniciar
   connectToWhatsApp();
 });
 
