@@ -2,7 +2,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const words = ['WhatsApp', 'Asistente'];
 const animationDuration = 3000; // ms
@@ -44,21 +44,39 @@ export function AnimatedHeadline() {
     return () => clearInterval(interval);
   }, []);
 
+  const longestWord = useMemo(() => {
+    return words.reduce((a, b) => (a.length > b.length ? a : b), '');
+  }, []);
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={words[wordIndex]}
-        variants={letterContainerVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        className="inline-block text-primary"
+        key="container"
+        className="inline-flex justify-center text-green-500"
       >
-        {words[wordIndex].split('').map((char, index) => (
-          <motion.span key={index} variants={letterVariants} className="inline-block">
-            {char}
-          </motion.span>
-        ))}
+        {/* Hidden element to reserve space for the longest word */}
+        <span className="invisible absolute">
+          {longestWord.split('').map((char, index) => (
+            <span key={index}>{char}</span>
+          ))}
+        </span>
+
+        <motion.div
+          key={words[wordIndex]}
+          variants={letterContainerVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="inline-flex"
+          aria-live="polite"
+          aria-label={words[wordIndex]}
+        >
+          {words[wordIndex].split('').map((char, index) => (
+            <motion.span key={index} variants={letterVariants} className="inline-block">
+              {char}
+            </motion.span>
+          ))}
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );
