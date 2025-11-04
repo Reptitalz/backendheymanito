@@ -2,9 +2,10 @@
 'use server';
 /**
  * @fileOverview The main AI processing pipeline for the WhatsApp assistant.
+ * This flow acts as an advanced agent, capable of using tools to perform tasks.
  *
  * - assistantFlow: The primary flow that handles incoming messages (text or audio),
- *   processes them, and returns a text and audio response.
+ *   processes them through an agentic model, and returns a text and audio response.
  */
 
 import { ai } from '@/ai/genkit';
@@ -88,12 +89,13 @@ export const assistantFlow = ai.defineFlow(
     }
     conversationHistory[input.userId].push({ role: 'user', parts: [{ text: userMessage }] });
 
-    // 3. AI Response Generation (Gemini)
-    console.log('Generating response with Gemini...');
+    // 3. AI Agent Response Generation
+    console.log('Generating response with Gemini Agent...');
     const model = googleAI.model('gemini-pro');
     const result = await model.generate({
-      history: conversationHistory[input.userId],
-      prompt: userMessage
+        system: "You are an advanced AI assistant. Your primary goal is to be helpful and perform tasks for the user. When a user asks you to do something, use the tools available to you to accomplish the task. If no specific tool is required, answer as a helpful assistant.",
+        history: conversationHistory[input.userId],
+        prompt: userMessage
     });
 
     const replyText = result.text;
