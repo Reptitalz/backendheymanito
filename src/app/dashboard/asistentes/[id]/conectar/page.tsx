@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Laptop, PowerOff, Trash2 } from 'lucide-react';
+import { ArrowLeft, Laptop, PowerOff, Trash2, Wifi, WifiOff, QrCode as QrCodeIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +16,9 @@ import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
-const loadingSteps = [
-    { progress: 0, message: "Inicializando..." },
-    { progress: 20, message: "Estableciendo conexión segura..." },
-    { progress: 50, message: "Solicitando código QR al servidor de Baileys..." },
-    { progress: 80, message: "Recibiendo datos del código..." },
-    { progress: 100, message: "¡Código recibido! Generando imagen..." },
-];
+const GATEWAY_URL = 'https://servidormanito-722319793837.europe-west1.run.app';
+
+type GatewayStatus = 'loading' | 'qr' | 'connected' | 'disconnected' | 'error';
 
 export default function ConectarPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,92 +35,103 @@ export default function ConectarPage() {
     }, [user, assistantId, firestore]);
 
     const { data: assistant, isLoading: isAssistantLoading } = useDoc(assistantRef);
-
-    const [status, setStatus] = useState<'loading' | 'qr_received' | 'connected' | 'error' | 'already_connected'>('loading');
-    const [linkedDevices, setLinkedDevices] = useState<{id: number, name: string, lastActive: string, icon: React.ElementType}[]>([]);
-    const [loadingProgress, setLoadingProgress] = useState(0);
-    const [loadingMessage, setLoadingMessage] = useState(loadingSteps[0].message);
-
-    useEffect(() => {
-        let progressInterval: NodeJS.Timeout;
-        if (status === 'loading') {
-            progressInterval = setInterval(() => {
-                setLoadingProgress(prev => {
-                    const nextProgress = prev + 2;
-                    const currentStep = loadingSteps.find((step, i) => {
-                        const nextStep = loadingSteps[i + 1];
-                        return nextProgress >= step.progress && (!nextStep || nextProgress < nextStep.progress);
-                    });
-                    if (currentStep) {
-                        setLoadingMessage(currentStep.message);
-                    }
-                    if (nextProgress >= 95) { // Stop before 100, wait for QR
-                        clearInterval(progressInterval);
-                        return 95;
-                    }
-                    return nextProgress;
-                });
-            }, 100);
-        }
-        return () => clearInterval(progressInterval);
-    }, [status]);
+    const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>('loading');
+    const [loadingMessage, setLoadingMessage] = useState("Inicializando...");
     
     useEffect(() => {
-        if (linkedDevices.length > 0) {
-            setStatus('already_connected');
-            return;
-        }
+        if (!assistantId) return;
 
-        const interval = setInterval(async () => {
+        const pollStatus = async () => {
             try {
-                const res = await fetch('/api/qr');
-                if (!res.ok) throw new Error('Failed to fetch');
+                const statusRes = await fetch(`${GATEWAY_URL}/status?assistantId=${assistantId}`);
+                if (!statusRes.ok) throw new Error('Failed to fetch status');
+                const { status } = await statusRes.json();
+                
+                setGatewayStatus(status);
 
-                const data = await res.json();
-
-                if (data.qr) {
-                    setLoadingProgress(100);
-                    setLoadingMessage("¡Código recibido! Generando imagen...");
-                    setStatus('qr_received');
-                    if (canvasRef.current) {
-                        QRCode.toCanvas(canvasRef.current, data.qr, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
+                if (status === 'qr') {
+                    setLoadingMessage("Solicitando código QR...");
+                    const qrRes = await fetch(`${GATEWAY_URL}/qr?assistantId=${assistantId}`);
+                    if (!qrRes.ok) throw new Error('Failed to fetch QR');
+                    const { qr } = await qrRes.json();
+                    
+                    if (qr && canvasRef.current) {
+                        QRCode.toCanvas(canvasRef.current, qr, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
                             if (error) console.error("Error generating QR code canvas:", error);
                         });
+                        setLoadingMessage("¡Escanea el código para conectar!");
                     }
-                } else {
-                     if (status === 'qr_received') { 
-                        setStatus('connected');
-                        clearInterval(interval);
-                        // Simulate adding a device upon connection
-                        setLinkedDevices([{ id: Date.now(), name: "Nuevo Dispositivo", lastActive: "Ahora mismo", icon: Laptop }]);
+                } else if (status === 'connected') {
+                    setLoadingMessage("¡Conectado! Redirigiendo...");
+                     // Give a moment for the user to see the message
+                    setTimeout(() => {
                         router.push('/dashboard/asistentes');
-                    }
+                    }, 2000);
+                } else {
+                     setLoadingMessage("Esperando conexión del gateway...");
                 }
+
             } catch (error) {
-                console.error("Error polling for QR code:", error);
-                setStatus('error');
+                console.error("Error polling gateway:", error);
+                setGatewayStatus('error');
+                setLoadingMessage("Error de conexión con el gateway.");
             }
-        }, 2000); 
+        };
 
-        return () => clearInterval(interval);
-    }, [router, status, linkedDevices]);
+        // Start polling immediately and then set an interval
+        pollStatus();
+        const intervalId = setInterval(pollStatus, 3000);
 
-    const handleDisconnect = (deviceId: number) => {
-        setLinkedDevices(devices => devices.filter(d => d.id !== deviceId));
-        setStatus('loading');
-        setLoadingProgress(0);
-        setLoadingMessage(loadingSteps[0].message);
-    }
-    
+        // Clear interval on component unmount
+        return () => clearInterval(intervalId);
+
+    }, [assistantId, router]);
+
+
     const getTitle = () => {
-        if (isAssistantLoading) {
-            return <Skeleton className="h-6 w-48" />;
-        }
-        if (assistant) {
-            return `Conectar: ${assistant.name}`;
-        }
+        if (isAssistantLoading) return <Skeleton className="h-6 w-48" />;
+        if (assistant) return `Conectar: ${assistant.name}`;
         return "Conectar Asistente";
     }
+
+    const renderStatusContent = () => {
+        switch (gatewayStatus) {
+            case 'loading':
+            case 'disconnected':
+                return (
+                    <div className="flex flex-col items-center gap-4 text-muted-foreground w-56">
+                        <Progress value={50} className="w-full h-2 animate-pulse" />
+                        <p className="text-xs text-center">{loadingMessage}</p>
+                    </div>
+                );
+            case 'qr':
+                return (
+                    <>
+                        <canvas ref={canvasRef} className="rounded-lg"/>
+                        <p className="text-xs text-muted-foreground text-center max-w-xs pt-4">
+                            Abre WhatsApp en tu teléfono, ve a `Configuración` {'>'} `Dispositivos vinculados` y escanea el código.
+                        </p>
+                    </>
+                );
+            case 'connected':
+                 return (
+                    <div className="flex flex-col items-center gap-4 text-green-600">
+                        <Wifi className="h-24 w-24 animate-pulse" />
+                        <p className="font-semibold text-lg">{loadingMessage}</p>
+                    </div>
+                );
+            case 'error':
+                 return (
+                    <div className="flex flex-col items-center gap-4 text-destructive">
+                        <WifiOff className="h-24 w-24" />
+                        <p className="font-semibold text-lg">{loadingMessage}</p>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    }
+
 
     return (
         <div className="flex items-center justify-center">
@@ -139,73 +146,14 @@ export default function ConectarPage() {
                         <div>
                             <CardTitle>{getTitle()}</CardTitle>
                              <CardDescription>
-                                {status === 'already_connected'
-                                    ? 'Gestiona la sesión activa de tu asistente.'
-                                    : 'Escanea el código QR con WhatsApp para vincular un nuevo dispositivo.'
-                                }
+                                Gestiona la conexión de tu asistente con WhatsApp.
                             </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center p-6 gap-4">
-                    {status === 'already_connected' ? (
-                        <div className="w-full text-center">
-                            <Alert>
-                                <AlertTitle className="flex items-center gap-2">
-                                    <PowerOff className="h-5 w-5 text-primary" />
-                                    Sesión Activa Detectada
-                                </AlertTitle>
-                                <AlertDescription>
-                                    Ya hay un dispositivo conectado. Solo se permite una sesión activa a la vez. Para conectar un nuevo dispositivo, primero debes cerrar la sesión actual.
-                                </AlertDescription>
-                            </Alert>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="h-64 w-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-                                {status === 'loading' && (
-                                    <div className="flex flex-col items-center gap-4 text-muted-foreground w-56">
-                                        <Progress value={loadingProgress} className="w-full h-2" />
-                                        <p className="text-xs text-center">{loadingMessage}</p>
-                                    </div>
-                                )}
-                                <canvas ref={canvasRef} className={status === 'qr_received' ? 'block' : 'hidden'} />
-                                 {status === 'error' && <p className="text-destructive">Error al cargar el código QR. Inténtalo de nuevo.</p>}
-                                 {status === 'connected' && <p className="text-green-600">¡Conectado! Redirigiendo...</p>}
-                            </div>
-                             <p className="text-xs text-muted-foreground text-center max-w-xs">
-                                Abre WhatsApp en tu teléfono, ve a `Configuración` {'>'} `Dispositivos vinculados` y escanea el código.
-                            </p>
-                        </>
-                    )}
+                <CardContent className="flex flex-col items-center justify-center p-6 gap-4 min-h-[320px]">
+                    {renderStatusContent()}
                 </CardContent>
-                <Separator />
-                <CardFooter className="flex flex-col items-start p-6 gap-4">
-                    <h3 className="font-semibold text-base">Dispositivos Vinculados</h3>
-                     {linkedDevices.length > 0 ? (
-                        <ul className="w-full space-y-3">
-                            {linkedDevices.map(device => (
-                                <li key={device.id} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <device.icon className="h-6 w-6 text-muted-foreground" />
-                                        <div>
-                                            <p className="font-medium text-sm">{device.name}</p>
-                                            <div className="text-xs text-muted-foreground">
-                                               Última vez activo: <Badge variant={device.lastActive === "Ahora mismo" ? "default" : "secondary"}>{device.lastActive}</Badge>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDisconnect(device.id)}>
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Cerrar Sesión
-                                    </Button>
-                                </li>
-                            ))}
-                        </ul>
-                     ) : (
-                        <p className="text-sm text-muted-foreground">No hay dispositivos vinculados.</p>
-                     )}
-                </CardFooter>
             </Card>
         </div>
     );
