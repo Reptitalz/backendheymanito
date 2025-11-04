@@ -16,7 +16,7 @@ import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
-const GATEWAY_URL = 'https://servidormanito-7-west1.run.app';
+const GATEWAY_URL = 'https://servidormanito-722319793837.europe-west1.run.app';
 
 type GatewayStatus = 'loading' | 'qr' | 'connected' | 'disconnected' | 'error' | 'not_found';
 
