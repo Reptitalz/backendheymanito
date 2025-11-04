@@ -1,3 +1,4 @@
+
 import { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import makeWASocket from '@whiskeysockets/baileys';
 import pino from 'pino';
@@ -23,7 +24,6 @@ const activeBots = new Map();
 let db = null; // Firestore se inicializa después
 
 // ======== SERVIDOR HTTP PRIMERO ========
-// Cloud Run requiere que el contenedor escuche rápido.
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -58,7 +58,6 @@ const server = http.createServer((req, res) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   logger.info(`🚀 Servidor HTTP activo en puerto ${PORT}`);
-  // Inicializa Firebase y bots en segundo plano
   initializeBackend();
 });
 
@@ -75,9 +74,6 @@ async function initializeBackend() {
   syncBotsWithFirestore();
 }
 
-/**
- * Inicializa Firebase Admin y Firestore
- */
 async function initializeFirebaseAdmin() {
   try {
     const key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -93,114 +89,120 @@ async function initializeFirebaseAdmin() {
   }
 }
 
-// ======== LÓGICA DE BOTS (sin cambios mayores) ========
+// ======== LÓGICA DE BOTS (REFACTORIZADA) ========
 
-async function createBotInstance(assistantId) {
-  if (activeBots.has(assistantId)) {
-    logger.warn(`El bot para ${assistantId} ya está en ejecución.`);
-    return;
-  }
-
-  const sessionPath = path.join(SESSION_BASE_PATH, assistantId);
-  await fsp.mkdir(sessionPath, { recursive: true });
-
-  const botState = {
-    status: 'disconnected',
-    qr: null,
-    sock: null,
-    reconnectAttempts: 0
-  };
-  activeBots.set(assistantId, botState);
-
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-
-  const sock = makeWASocket({
-    auth: state,
-    printQRInTerminal: false,
-    logger,
-    browser: ['Hey Manito!', 'Cloud Run', '3.0']
-  });
-
-  botState.sock = sock;
-
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
-    const current = activeBots.get(assistantId);
-
-    if (qr) {
-      current.status = 'qr';
-      current.qr = qr;
-      logger.warn(`📲 [${assistantId}] QR disponible`);
+async function connectToWhatsApp(assistantId) {
+    const botState = activeBots.get(assistantId);
+    if (!botState) {
+        logger.error(`[${assistantId}] No se encontró el estado del bot para la conexión.`);
+        return;
     }
 
-    if (connection === 'close') {
-      const reason = (lastDisconnect?.error)?.output?.statusCode;
-      const shouldReconnect = reason !== DisconnectReason.loggedOut;
+    const sessionPath = path.join(SESSION_BASE_PATH, assistantId);
+    await fsp.mkdir(sessionPath, { recursive: true });
 
-      current.qr = null;
-      if (shouldReconnect) {
-        current.status = 'error';
-        logger.warn(`[${assistantId}] Reintentando conexión...`);
-        setTimeout(() => createBotInstance(assistantId), 5000 * ++current.reconnectAttempts);
-      } else {
-        current.status = 'disconnected';
-        await fsp.rm(sessionPath, { recursive: true, force: true });
-        activeBots.delete(assistantId);
-        logger.warn(`[${assistantId}] Sesión eliminada permanentemente.`);
-      }
-    } else if (connection === 'open') {
-      current.status = 'connected';
-      current.qr = null;
-      current.reconnectAttempts = 0;
-      logger.info(`✅ [${assistantId}] Conexión establecida`);
-    }
-  });
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
-  sock.ev.on('creds.update', saveCreds);
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: false,
+        logger,
+        browser: ['Hey Manito!', 'Cloud Run', '3.0']
+    });
 
-  sock.ev.on('messages.upsert', async (m) => {
-    const msg = m.messages[0];
-    if (!msg.message || msg.key.fromMe) return;
-    const sender = msg.key.remoteJid;
+    botState.sock = sock;
 
-    try {
-      const type = Object.keys(msg.message)[0];
-      const formData = new FormData();
-      formData.append('from', sender);
-      formData.append('assistantId', assistantId);
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+        const current = activeBots.get(assistantId);
+        if (!current) return;
 
-      if (type === 'conversation')
-        formData.append('message', msg.message.conversation);
-      else if (type === 'extendedTextMessage')
-        formData.append('message', msg.message.extendedTextMessage.text);
-      else if (type === 'audioMessage') {
-        const audioBuffer = await sock.downloadMediaMessage(msg);
-        const tempPath = path.join(os.tmpdir(), `temp_${Date.now()}.ogg`);
-        await fsp.writeFile(tempPath, audioBuffer);
-        formData.append('audio', fs.createReadStream(tempPath));
-      } else return;
+        if (qr) {
+            current.status = 'qr';
+            current.qr = qr;
+            logger.warn(`📲 [${assistantId}] QR disponible para escanear.`);
+        }
 
-      await sock.sendPresenceUpdate('composing', sender);
-      const response = await axios.post(NEXTJS_WEBHOOK_URL, formData, { headers: formData.getHeaders() });
-      const { replyText, replyAudio } = response.data || {};
+        if (connection === 'close') {
+            const reason = (lastDisconnect?.error)?.output?.statusCode;
+            const shouldReconnect = reason !== DisconnectReason.loggedOut;
+            
+            logger.warn(`[${assistantId}] Conexión cerrada. Razón: ${reason}. Reintentando: ${shouldReconnect}`);
 
-      if (replyText) await sock.sendMessage(sender, { text: replyText });
-      if (replyAudio) {
-        const audioData = Buffer.from(replyAudio.split(';base64,').pop(), 'base64');
-        await sock.sendMessage(sender, { audio: audioData, mimetype: 'audio/wav' });
-      }
+            current.qr = null;
+            if (shouldReconnect) {
+                current.status = 'disconnected'; // O 'reconnecting'
+                connectToWhatsApp(assistantId); // Llama a la función para reconectar
+            } else {
+                current.status = 'disconnected';
+                await fsp.rm(sessionPath, { recursive: true, force: true });
+                activeBots.delete(assistantId);
+                logger.error(`[${assistantId}] Sesión cerrada permanentemente. Se requiere nuevo escaneo de QR.`);
+            }
+        } else if (connection === 'open') {
+            current.status = 'connected';
+            current.qr = null;
+            logger.info(`✅ [${assistantId}] Conexión establecida.`);
+        }
+    });
 
-      await sock.sendPresenceUpdate('paused', sender);
-    } catch (err) {
-      logger.error(`[${assistantId}] Error procesando mensaje: ${err.message}`);
-      await sock.sendMessage(sender, { text: 'Ocurrió un error al procesar tu mensaje.' });
-    }
-  });
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('messages.upsert', async (m) => {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return;
+        const sender = msg.key.remoteJid;
+
+        try {
+            const type = Object.keys(msg.message)[0];
+            const formData = new FormData();
+            formData.append('from', sender);
+            formData.append('assistantId', assistantId);
+
+            if (type === 'conversation')
+                formData.append('message', msg.message.conversation);
+            else if (type === 'extendedTextMessage')
+                formData.append('message', msg.message.extendedTextMessage.text);
+            else if (type === 'audioMessage') {
+                const audioBuffer = await sock.downloadMediaMessage(msg);
+                const tempPath = path.join(os.tmpdir(), `temp_${Date.now()}.ogg`);
+                await fsp.writeFile(tempPath, audioBuffer);
+                formData.append('audio', fs.createReadStream(tempPath));
+            } else return;
+
+            await sock.sendPresenceUpdate('composing', sender);
+            const response = await axios.post(NEXTJS_WEBHOOK_URL, formData, { headers: formData.getHeaders() });
+            const { replyText, replyAudio } = response.data || {};
+
+            if (replyText) await sock.sendMessage(sender, { text: replyText });
+            if (replyAudio) {
+                const audioData = Buffer.from(replyAudio.split(';base64,').pop(), 'base64');
+                await sock.sendMessage(sender, { audio: audioData, mimetype: 'audio/wav' });
+            }
+            await sock.sendPresenceUpdate('paused', sender);
+        } catch (err) {
+            logger.error(`[${assistantId}] Error procesando mensaje: ${err.message}`);
+            await sock.sendMessage(sender, { text: 'Ocurrió un error al procesar tu mensaje.' });
+        }
+    });
 }
 
-/**
- * Escucha cambios en Firestore y sincroniza bots.
- */
+function createBotInstance(assistantId) {
+    if (activeBots.has(assistantId)) {
+        logger.warn(`El bot para ${assistantId} ya está en proceso.`);
+        return;
+    }
+    logger.info(`Iniciando nueva instancia de bot para el asistente: ${assistantId}`);
+
+    const botState = {
+        status: 'loading', // Estado inicial
+        qr: null,
+        sock: null,
+    };
+    activeBots.set(assistantId, botState);
+    connectToWhatsApp(assistantId).catch(e => logger.error(`[${assistantId}] Fallo al conectar: ${e.message}`));
+}
+
 function syncBotsWithFirestore() {
   if (!db) {
     logger.error("⚠️ Firestore no disponible, reintentando en 5s...");
@@ -210,30 +212,45 @@ function syncBotsWithFirestore() {
 
   db.collectionGroup('assistants').onSnapshot(
     (snapshot) => {
+      logger.info(`Sincronizando ${snapshot.size} asistentes desde Firestore...`);
       const firestoreAssistants = new Set(snapshot.docs.map((d) => d.id));
-      // iniciar nuevos
+      
+      // Iniciar bots para asistentes nuevos o no activos
       for (const id of firestoreAssistants) {
-        if (!activeBots.has(id)) createBotInstance(id).catch(e => logger.error(`Error creando bot ${id}: ${e.message}`));
+        if (!activeBots.has(id)) {
+          createBotInstance(id);
+        }
       }
-      // detener eliminados
+      
+      // Detener bots para asistentes eliminados
       for (const id of activeBots.keys()) {
         if (!firestoreAssistants.has(id)) {
           stopBotInstance(id).catch(e => logger.error(`Error deteniendo bot ${id}: ${e.message}`));
         }
       }
     },
-    (err) => logger.error("❌ Error escuchando cambios Firestore:", err)
+    (err) => logger.error("❌ Error escuchando cambios en Firestore:", err)
   );
 }
 
 async function stopBotInstance(assistantId) {
-  if (!activeBots.has(assistantId)) return;
   const bot = activeBots.get(assistantId);
-  logger.warn(`Deteniendo bot ${assistantId}`);
-  if (bot.sock) await bot.sock.logout();
+  if (!bot) return;
+
+  logger.warn(`Deteniendo bot ${assistantId}...`);
+  if (bot.sock) {
+    try {
+      await bot.sock.logout();
+    } catch (e) {
+      logger.error(`[${assistantId}] Error durante el logout: ${e.message}`);
+    }
+  }
+  
   const sessionPath = path.join(SESSION_BASE_PATH, assistantId);
-  await fsp.rm(sessionPath, { recursive: true, force: true });
+  await fsp.rm(sessionPath, { recursive: true, force: true }).catch(e => logger.error(`No se pudo eliminar la carpeta de sesión para ${assistantId}: ${e.message}`));
+  
   activeBots.delete(assistantId);
+  logger.info(`Bot ${assistantId} detenido y eliminado.`);
 }
 
 process.on('unhandledRejection', (r) => logger.error('Unhandled Rejection:', r));

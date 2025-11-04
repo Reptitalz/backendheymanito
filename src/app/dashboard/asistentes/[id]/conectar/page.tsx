@@ -53,19 +53,15 @@ export default function ConectarPage() {
 
                 if (status === 'qr') {
                     setLoadingMessage("¡Escanea el código para conectar!");
-                    if (!qrCodeValue) {
-                        // Fetch QR directly from the gateway
+                    // Only fetch QR if we don't have it, to prevent flickering
+                    if (!qrCodeValue) { 
                         const qrRes = await fetch(`${GATEWAY_URL}/qr?assistantId=${assistantId}`);
                         if (!qrRes.ok) throw new Error('Failed to fetch QR from gateway');
                         const { qr } = await qrRes.json();
                         
                         if (qr) {
                             setQrCodeValue(qr);
-                            if (canvasRef.current) {
-                                QRCode.toCanvas(canvasRef.current, qr, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
-                                    if (error) console.error("Error generating QR code canvas:", error);
-                                });
-                            }
+                            // Defer canvas drawing to the next render cycle after state is set
                         }
                     }
                 } else if (status === 'connected') {
@@ -87,13 +83,19 @@ export default function ConectarPage() {
         };
 
         const intervalId = setInterval(pollStatus, 3000);
-
-        // Run once immediately
-        pollStatus();
+        pollStatus(); // Run once immediately
 
         return () => clearInterval(intervalId);
 
-    }, [assistantId, router, qrCodeValue]);
+    }, [assistantId, router, qrCodeValue]); // qrCodeValue dependency to avoid re-fetching QR
+
+    useEffect(() => {
+        if (qrCodeValue && canvasRef.current) {
+            QRCode.toCanvas(canvasRef.current, qrCodeValue, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
+                if (error) console.error("Error generating QR code canvas:", error);
+            });
+        }
+    }, [qrCodeValue]);
 
 
     const getTitle = () => {
@@ -103,6 +105,7 @@ export default function ConectarPage() {
     }
 
     const renderStatusContent = () => {
+        // Prioritize showing the QR code if we have it
         if (qrCodeValue) {
              return (
                 <>
@@ -114,6 +117,7 @@ export default function ConectarPage() {
             );
         }
 
+        // Otherwise, show the current status
         switch (gatewayStatus) {
             case 'loading':
             case 'disconnected':
