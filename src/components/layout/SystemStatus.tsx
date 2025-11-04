@@ -52,24 +52,22 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ label, status, toolti
 
 
 export function SystemStatus() {
-  const [frontendStatus, setFrontendStatus] = useState<Status>('loading');
+  const [frontendStatus, setFrontendStatus] = useState<Status>('online'); // Implicitly online
   const [gatewayStatus, setGatewayStatus] = useState<Status>('loading');
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  
+  const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch('/api/status');
+        const response = await fetch(`${gatewayUrl}/status`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
         
-        // Frontend status
-        setFrontendStatus(data.frontend === 'online' ? 'online' : 'offline');
-
-        // Gateway status
-        switch (data.gateway) {
+        switch (data.status) {
           case 'connected':
             setGatewayStatus('online');
             break;
@@ -86,7 +84,6 @@ export function SystemStatus() {
 
       } catch (error) {
         console.error("Failed to fetch system status:", error);
-        setFrontendStatus('offline');
         setGatewayStatus('offline');
       } finally {
         setLastUpdated(new Date().toLocaleTimeString());
@@ -109,13 +106,8 @@ export function SystemStatus() {
     }
   }
   
-    const getFrontendTooltip = () => {
-    switch (frontendStatus) {
-        case 'online': return "La aplicación web está funcionando correctamente.";
-        case 'offline': return "La aplicación web no puede conectarse al servidor.";
-        case 'loading': return "Verificando el estado de la aplicación...";
-        default: return "Estado desconocido.";
-    }
+  const getFrontendTooltip = () => {
+    return "La aplicación web está funcionando correctamente.";
   }
 
 

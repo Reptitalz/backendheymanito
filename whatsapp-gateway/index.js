@@ -1,3 +1,4 @@
+
 import { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import makeWASocket from '@whiskeysockets/baileys';
 import pino from 'pino';
@@ -13,23 +14,15 @@ import http from 'http';
 const NEXTJS_APP_URL = "https://studio--studio-1128284178-7d125.us-central1.hosted.app";
 const NEXTJS_WEBHOOK_URL = `${NEXTJS_APP_URL}/api/webhook`;
 const NEXTJS_QR_URL = `${NEXTJS_APP_URL}/api/qr`;
-const NEXTJS_STATUS_URL = `${NEXTJS_APP_URL}/api/status`;
 const SESSION_FILE_PATH = path.join(os.tmpdir(), 'wa-session');
 // =====================
+
+let gatewayStatus = 'disconnected'; // disconnected, qr, connected, error
 
 const logger = pino({
   level: 'info',
   transport: { target: 'pino-pretty' }
 });
-
-async function updateGatewayStatus(status) {
-  try {
-    await axios.post(NEXTJS_STATUS_URL, { status });
-    logger.info(`Estado del gateway actualizado a: ${status}`);
-  } catch (err) {
-    logger.error(`Error actualizando estado del gateway (${status}):`, err.message);
-  }
-}
 
 async function connectToWhatsApp() {
   try {
@@ -47,8 +40,9 @@ async function connectToWhatsApp() {
 
       if (qr) {
         logger.info('Nuevo código QR generado');
-        await updateGatewayStatus('qr');
+        gatewayStatus = 'qr';
         try {
+          // Aún enviamos el QR al frontend para que lo muestre
           await axios.post(NEXTJS_QR_URL, { qr });
         } catch (e) {
           logger.error('Error enviando QR:', e.message);
@@ -59,8 +53,8 @@ async function connectToWhatsApp() {
         const reason = (lastDisconnect?.error)?.output?.statusCode;
         const shouldReconnect = reason !== DisconnectReason.loggedOut;
         logger.warn('Conexión cerrada. Motivo:', reason, 'Reconectar:', shouldReconnect);
-
-        await updateGatewayStatus(shouldReconnect ? 'error' : 'disconnected');
+        
+        gatewayStatus = shouldReconnect ? 'error' : 'disconnected';
 
         if (shouldReconnect) {
           setTimeout(connectToWhatsApp, 3000); // intenta reconectar
@@ -75,7 +69,7 @@ async function connectToWhatsApp() {
         }
       } else if (connection === 'open') {
         logger.info('✅ Conectado con WhatsApp');
-        await updateGatewayStatus('connected');
+        gatewayStatus = 'connected';
         try {
           await axios.post(NEXTJS_QR_URL, { qr: null });
         } catch (e) {
@@ -141,13 +135,27 @@ async function connectToWhatsApp() {
     return sock;
   } catch (err) {
     logger.error('❌ Error al iniciar WhatsApp:', err.message);
-    await updateGatewayStatus('error');
+    gatewayStatus = 'error';
   }
 }
 
 // === Servidor HTTP para Cloud Run ===
 const server = http.createServer((req, res) => {
-  if (req.url === '/' || req.url === '/_health') {
+  // Añadir cabeceras CORS para permitir peticiones desde el frontend
+  res.setHeader('Access-Control-Allow-Origin', '*'); // En producción, sería mejor restringirlo a la URL del frontend
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.url === '/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: gatewayStatus }));
+  } else if (req.url === '/' || req.url === '/_health') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
   } else {
@@ -159,14 +167,11 @@ const server = http.createServer((req, res) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   logger.info(`🚀 Servidor HTTP listo en el puerto ${PORT}`);
-  updateGatewayStatus('disconnected');
-  // 🔹 Conecta en segundo plano (no bloquea el arranque)
+  gatewayStatus = 'disconnected';
   connectToWhatsApp();
 });
 
-// Evita que el contenedor muera por errores no manejados
 process.on('unhandledRejection', (r) => logger.error('Unhandled Rejection:', r));
 process.on('uncaughtException', (e) => logger.error('Uncaught Exception:', e));
-
 
 logger.info('NEXTJS_APP_URL:', process.env.NEXTJS_APP_URL);

@@ -1,28 +1,20 @@
 
 import { NextResponse } from 'next/server';
 
-// Store status in memory. In a real app, use a more persistent store like Redis.
-let gatewayStatus: 'connected' | 'disconnected' | 'qr' | 'error' = 'disconnected';
-
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    if (['connected', 'disconnected', 'qr', 'error'].includes(body.status)) {
-        gatewayStatus = body.status;
-        console.log(`Gateway status updated: ${gatewayStatus}`);
-        return NextResponse.json({ success: true });
-    }
-    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-  } catch (error) {
-    console.error("Error in /api/status POST:", error);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-  }
-}
+// This file is no longer primarily responsible for status management.
+// The frontend will now query the gateway directly.
+// We'll keep this file for potential future use or proxying, but it's simplified.
 
 export async function GET() {
-  // The frontend status is implicitly 'online' if this endpoint is reachable.
+  // This just confirms the frontend server itself is online.
   return NextResponse.json({ 
     frontend: 'online',
-    gateway: gatewayStatus 
+    gateway: 'unknown' // The client is responsible for fetching the gateway status
   });
+}
+
+// The POST endpoint is no longer needed as the gateway won't push status updates.
+// You can remove it or leave it, it just won't be called.
+export async function POST(req: Request) {
+  return NextResponse.json({ message: "This endpoint is deprecated. Please query the gateway's /status endpoint directly." }, { status: 410 });
 }

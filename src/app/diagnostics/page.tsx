@@ -44,23 +44,26 @@ const StatusCard = ({ title, status, description, icon: Icon, children }: { titl
 }
 
 export default function DiagnosticsPage() {
-    const [frontendStatus, setFrontendStatus] = useState<Status>('loading');
+    const [frontendStatus, setFrontendStatus] = useState<Status>('online'); // Frontend is online if page loads
     const [gatewayStatus, setGatewayStatus] = useState<Status>('loading');
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
     const [isTesting, setIsTesting] = useState(false);
     const { toast } = useToast();
+    
+    const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
 
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                const response = await fetch('/api/status');
+                // The frontend is implicitly 'online' if this code is running.
+                setFrontendStatus('online');
+
+                const response = await fetch(`${gatewayUrl}/status`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const data = await response.json();
 
-                setFrontendStatus(data.frontend === 'online' ? 'online' : 'offline');
-
-                switch (data.gateway) {
+                switch (data.status) {
                     case 'connected': setGatewayStatus('online'); break;
                     case 'qr': setGatewayStatus('degraded'); break;
                     case 'disconnected':
@@ -69,7 +72,6 @@ export default function DiagnosticsPage() {
                 }
             } catch (error) {
                 console.error("Failed to fetch system status:", error);
-                setFrontendStatus('offline');
                 setGatewayStatus('offline');
             } finally {
                 setLastUpdated(new Date().toLocaleString());
@@ -84,7 +86,6 @@ export default function DiagnosticsPage() {
 
     const handleTestGateway = async () => {
         setIsTesting(true);
-        const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
         try {
             const response = await fetch(gatewayUrl);
             const text = await response.text();
@@ -93,6 +94,14 @@ export default function DiagnosticsPage() {
                     title: '¡Éxito!',
                     description: `El gateway respondió correctamente con "OK".`,
                 });
+                 // Force a status re-check after successful test
+                const statusRes = await fetch(`${gatewayUrl}/status`);
+                const statusData = await statusRes.json();
+                 switch (statusData.status) {
+                    case 'connected': setGatewayStatus('online'); break;
+                    case 'qr': setGatewayStatus('degraded'); break;
+                    default: setGatewayStatus('offline');
+                }
             } else {
                  throw new Error(`Respuesta inesperada: ${text}`);
             }
@@ -102,8 +111,10 @@ export default function DiagnosticsPage() {
                 title: 'Error de Conexión',
                 description: `No se pudo conectar con el gateway: ${error.message}`,
             });
+            setGatewayStatus('offline');
         } finally {
             setIsTesting(false);
+            setLastUpdated(new Date().toLocaleString());
         }
     }
     
@@ -118,15 +129,10 @@ export default function DiagnosticsPage() {
     }
 
     const getFrontendDescription = () => {
-        switch (frontendStatus) {
-            case 'online': return "La aplicación principal (Next.js) está funcionando correctamente y respondiendo a las solicitudes.";
-            case 'offline': return "La aplicación no puede comunicarse con su propio servidor. Esto puede indicar un problema de despliegue o de red.";
-            case 'loading': return "Verificando el estado de la aplicación web...";
-            default: return "Estado desconocido.";
-        }
+        return "La aplicación principal (Next.js) está funcionando correctamente y respondiendo a las solicitudes, ya que esta página se ha cargado.";
     }
 
-    if (frontendStatus === 'loading' && gatewayStatus === 'loading') {
+    if (gatewayStatus === 'loading') {
         return (
              <div className="flex flex-col gap-4">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center gap-3">
