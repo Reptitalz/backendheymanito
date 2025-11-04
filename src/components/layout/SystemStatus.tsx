@@ -53,70 +53,26 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ label, status, toolti
 
 export function SystemStatus() {
   const [frontendStatus, setFrontendStatus] = useState<Status>('online'); // Implicitly online
-  const [gatewayStatus, setGatewayStatus] = useState<Status>('loading');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   
-  const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
-
   useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const response = await fetch(`${gatewayUrl}/status`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        
-        switch (data.status) {
-          case 'connected':
-            setGatewayStatus('online');
-            break;
-          case 'qr':
-            setGatewayStatus('degraded');
-            break;
-          case 'disconnected':
-          case 'error':
-            setGatewayStatus('offline');
-            break;
-          default:
-            setGatewayStatus('loading');
-        }
-
-      } catch (error) {
-        console.error("Failed to fetch system status:", error);
-        setGatewayStatus('offline');
-      } finally {
-        setLastUpdated(new Date().toLocaleTimeString());
-      }
-    };
-
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 15000); // Poll every 15 seconds
+    setLastUpdated(new Date().toLocaleTimeString());
+    const interval = setInterval(() => {
+      setLastUpdated(new Date().toLocaleTimeString());
+    }, 15000); // Poll every 15 seconds
 
     return () => clearInterval(interval);
   }, []);
   
-  const getGatewayTooltip = () => {
-    switch (gatewayStatus) {
-        case 'online': return "El gateway de WhatsApp está conectado y operativo.";
-        case 'degraded': return "El gateway está esperando que se escanee el código QR.";
-        case 'offline': return "El gateway de WhatsApp no está conectado.";
-        case 'loading': return "Verificando el estado del gateway...";
-        default: return "Estado desconocido.";
-    }
-  }
-  
   const getFrontendTooltip = () => {
     return "La aplicación web está funcionando correctamente.";
   }
-
 
   return (
     <div className="bg-gray-800/50 border-t border-gray-700/50">
         <div className="container mx-auto px-4 md:px-8 py-2 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
                 <StatusIndicator label="Frontend" status={frontendStatus} tooltip={getFrontendTooltip()} />
-                <StatusIndicator label="Gateway (Cloud Run)" status={gatewayStatus} tooltip={getGatewayTooltip()} />
             </div>
             <div className="text-xs text-gray-500">
                 {lastUpdated && `Última act: ${lastUpdated}`}

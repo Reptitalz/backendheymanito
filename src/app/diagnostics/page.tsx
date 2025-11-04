@@ -12,7 +12,7 @@ type Status = 'online' | 'degraded' | 'offline' | 'loading';
 const statusConfig: Record<Status, { text: string; color: string; icon: React.ElementType }> = {
     loading: { text: 'Verificando...', color: 'text-yellow-500', icon: Loader },
     online: { text: 'Operativo', color: 'text-green-500', icon: CheckCircle2 },
-    degraded: { text: 'Degradado', color: 'text-yellow-500', icon: AlertTriangle },
+    degraded: { text: 'Atención Requerida', color: 'text-yellow-500', icon: AlertTriangle },
     offline: { text: 'Fuera de Línea', color: 'text-red-500', icon: XCircle },
 };
 
@@ -45,28 +45,25 @@ export default function DiagnosticsPage() {
     const [gatewayStatus, setGatewayStatus] = useState<Status>('loading');
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
     
+    // El gateway ahora no tiene un estado "general", sino por asistente.
+    // Para esta página, simplemente verificaremos si el servicio de Cloud Run responde.
     const gatewayUrl = 'https://servidormanito-722319793837.europe-west1.run.app';
 
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                // The frontend is implicitly 'online' if this code is running.
+                // Frontend is implicitly 'online'
                 setFrontendStatus('online');
 
-                const response = await fetch(`${gatewayUrl}/status`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-
-                switch (data.status) {
-                    case 'connected': setGatewayStatus('online'); break;
-                    case 'qr': setGatewayStatus('degraded'); break;
-                    case 'disconnected':
-                    case 'error': setGatewayStatus('offline'); break;
-                    default: setGatewayStatus('loading');
+                // We just ping the root of the gateway to see if the service is up.
+                const response = await fetch(`${gatewayUrl}/`);
+                if (response.ok) {
+                   setGatewayStatus('online');
+                } else {
+                   throw new Error('Network response was not ok');
                 }
             } catch (error) {
-                console.error("Failed to fetch system status:", error);
+                console.error("Failed to fetch gateway status:", error);
                 setGatewayStatus('offline');
             } finally {
                 setLastUpdated(new Date().toLocaleString());
@@ -74,38 +71,22 @@ export default function DiagnosticsPage() {
         };
 
         fetchStatus();
-        const intervalId = setInterval(fetchStatus, 15000); // Poll every 15 seconds
+        const intervalId = setInterval(fetchStatus, 30000); // Poll every 30 seconds
 
         return () => clearInterval(intervalId);
     }, []);
     
     const getGatewayDescription = () => {
         switch (gatewayStatus) {
-            case 'online': return "El gateway de WhatsApp está conectado y operativo. Los mensajes se procesarán normalmente.";
-            case 'degraded': return "El gateway está en funcionamiento pero necesita atención. Se requiere escanear un código QR para (re)conectar una sesión de WhatsApp.";
-            case 'offline': return "El gateway de WhatsApp no está conectado o ha encontrado un error. Los mensajes no se pueden enviar ni recibir. Revisa los logs del servicio.";
-            case 'loading': return "Verificando el estado del gateway de WhatsApp...";
+            case 'online': return "El servicio del Gateway en Cloud Run está en línea y respondiendo. El estado de cada bot individual se puede ver en la sección 'Mis Asistentes'.";
+            case 'offline': return "No se puede establecer comunicación con el servicio del Gateway en Cloud Run. El servicio podría estar caído o experimentando problemas.";
+            case 'loading': return "Verificando la disponibilidad del servicio del Gateway...";
             default: return "Estado desconocido.";
         }
     }
 
     const getFrontendDescription = () => {
         return "La aplicación principal (Next.js) está funcionando correctamente y respondiendo a las solicitudes, ya que esta página se ha cargado.";
-    }
-
-    if (gatewayStatus === 'loading') {
-        return (
-             <div className="flex flex-col gap-4">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-headline flex items-center gap-3">
-                    <Activity className="h-8 w-8 text-primary" />
-                    Diagnóstico del Sistema
-                </h1>
-                <div className="grid md:grid-cols-2 gap-6 pt-4">
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-48 w-full" />
-                </div>
-            </div>
-        )
     }
 
     return (
@@ -116,7 +97,7 @@ export default function DiagnosticsPage() {
                     Diagnóstico del Sistema
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    Un resumen detallado del estado de los servicios principales.
+                    Un resumen del estado de los servicios principales.
                     {lastUpdated && ` (Última actualización: ${lastUpdated})`}
                 </p>
             </header>
@@ -129,12 +110,22 @@ export default function DiagnosticsPage() {
                     icon={Server}
                 />
                 <StatusCard 
-                    title="Gateway (Baileys)" 
+                    title="Gateway (Cloud Run)" 
                     status={gatewayStatus}
                     description={getGatewayDescription()}
                     icon={Smartphone}
                 />
             </div>
+             <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>Nota sobre el Estado del Gateway</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">
+                        El estado "Operativo" del Gateway solo confirma que el servicio principal está en línea. Dado que ahora el sistema maneja múltiples bots, el estado de conexión de cada bot individual (Conectado, Desconectado, Necesita QR) se muestra directamente en la tarjeta de cada asistente en la sección <Link href="/dashboard/asistentes" className="text-primary underline">Mis Asistentes</Link>.
+                    </p>
+                </CardContent>
+            </Card>
         </div>
     );
 }
