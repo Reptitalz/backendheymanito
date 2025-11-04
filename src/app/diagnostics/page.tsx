@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Activity, Server, Smartphone, CheckCircle2, AlertTriangle, XCircle, Loader, Beaker } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 type Status = 'online' | 'degraded' | 'offline' | 'loading';
 

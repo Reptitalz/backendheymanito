@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { geminiPro, geminiProVision, gemini25FlashTts } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 import wav from 'wav';
 
 // Define the input schema for the main flow
@@ -68,7 +68,7 @@ export const assistantFlow = ai.defineFlow(
     if (input.audio) {
       console.log('Audio received, transcribing...');
       const transcribeResponse = await ai.generate({
-        model: geminiProVision,
+        model: googleAI.model('gemini-pro-vision'),
         prompt: {
             text: "Transcribe the following audio.",
             media: { url: input.audio }
@@ -90,7 +90,7 @@ export const assistantFlow = ai.defineFlow(
 
     // 3. AI Response Generation (Gemini)
     console.log('Generating response with Gemini...');
-    const model = ai.model(geminiPro);
+    const model = googleAI.model('gemini-pro');
     const result = await model.generate({
       history: conversationHistory[input.userId],
       prompt: userMessage
@@ -105,7 +105,7 @@ export const assistantFlow = ai.defineFlow(
     // 4. Text-to-Speech (Google TTS)
     console.log('Generating speech with TTS model...');
     const { media } = await ai.generate({
-      model: gemini25FlashTts,
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
       prompt: replyText,
       config: {
         responseModalities: ['AUDIO'],
