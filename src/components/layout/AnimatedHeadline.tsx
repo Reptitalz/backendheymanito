@@ -52,10 +52,10 @@ export function AnimatedHeadline() {
     <AnimatePresence mode="wait">
       <motion.div
         key="container"
-        className="inline-flex justify-center text-green-500"
+        className="inline-flex justify-center text-green-500 relative"
       >
         {/* Hidden element to reserve space for the longest word */}
-        <span className="invisible absolute">
+        <span className="invisible">
           {longestWord.split('').map((char, index) => (
             <span key={index}>{char}</span>
           ))}
@@ -67,7 +67,7 @@ export function AnimatedHeadline() {
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="inline-flex"
+          className="inline-flex absolute left-1/2 -translate-x-1/2"
           aria-live="polite"
           aria-label={words[wordIndex]}
         >
