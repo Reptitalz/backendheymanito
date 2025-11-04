@@ -13,11 +13,13 @@ import http from 'http';
 // === CONFIGURACIÓN ===
 const NEXTJS_APP_URL = "https://studio--studio-1128284178-7d125.us-central1.hosted.app";
 const NEXTJS_WEBHOOK_URL = `${NEXTJS_APP_URL}/api/webhook`;
-const NEXTJS_QR_URL = `${NEXTJS_APP_URL}/api/qr`;
+// El QR ya no se envía, el frontend lo pide
+// const NEXTJS_QR_URL = `${NEXTJS_APP_URL}/api/qr`; 
 const SESSION_FILE_PATH = path.join(os.tmpdir(), 'wa-session');
 // =====================
 
 let gatewayStatus = 'disconnected'; // disconnected, qr, connected, error
+let qrCode = null; // Almacenamos el QR en memoria
 
 const logger = pino({
   level: 'info',
@@ -41,12 +43,7 @@ async function connectToWhatsApp() {
       if (qr) {
         logger.info('Nuevo código QR generado');
         gatewayStatus = 'qr';
-        try {
-          // Aún enviamos el QR al frontend para que lo muestre
-          await axios.post(NEXTJS_QR_URL, { qr });
-        } catch (e) {
-          logger.error('Error enviando QR:', e.message);
-        }
+        qrCode = qr; // Almacenamos el QR
       }
 
       if (connection === 'close') {
@@ -55,12 +52,12 @@ async function connectToWhatsApp() {
         logger.warn('Conexión cerrada. Motivo:', reason, 'Reconectar:', shouldReconnect);
         
         gatewayStatus = shouldReconnect ? 'error' : 'disconnected';
+        qrCode = null;
 
         if (shouldReconnect) {
           setTimeout(connectToWhatsApp, 3000); // intenta reconectar
         } else {
           try {
-            await axios.post(NEXTJS_QR_URL, { qr: null });
             await fsp.rm(SESSION_FILE_PATH, { recursive: true, force: true });
             logger.info('Sesión eliminada tras logout');
           } catch (e) {
@@ -70,11 +67,7 @@ async function connectToWhatsApp() {
       } else if (connection === 'open') {
         logger.info('✅ Conectado con WhatsApp');
         gatewayStatus = 'connected';
-        try {
-          await axios.post(NEXTJS_QR_URL, { qr: null });
-        } catch (e) {
-          logger.error('Error limpiando QR:', e.message);
-        }
+        qrCode = null; // Limpiamos el QR una vez conectados
       }
     });
 
@@ -142,7 +135,7 @@ async function connectToWhatsApp() {
 // === Servidor HTTP para Cloud Run ===
 const server = http.createServer((req, res) => {
   // Añadir cabeceras CORS para permitir peticiones desde el frontend
-  res.setHeader('Access-Control-Allow-Origin', '*'); // En producción, sería mejor restringirlo a la URL del frontend
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -155,6 +148,9 @@ const server = http.createServer((req, res) => {
   if (req.url === '/status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: gatewayStatus }));
+  } else if (req.url === '/qr') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ qr: qrCode }));
   } else if (req.url === '/' || req.url === '/_health') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
