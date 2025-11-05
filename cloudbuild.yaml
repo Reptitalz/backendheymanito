@@ -16,10 +16,23 @@ steps:
     - '$_DEPLOY_REGION-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE_NAME:$COMMIT_SHA'
   id: 'Push'
 
-# 3. Imprimir la variable de entorno para depuración
-- name: 'ubuntu'
-  args: ['bash', '-c', "echo 'La URL del frontend que se va a usar es: https://heymanito.com'"]
-  id: 'Debug URL'
+# 3. Asignar roles necesarios a la cuenta de servicio de Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'projects'
+    - 'add-iam-policy-binding'
+    - '$PROJECT_ID'
+    - '--member=serviceAccount:${_COMPUTE_SERVICE_ACCOUNT}'
+    - '--role=roles/datastore.user'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'projects'
+    - 'add-iam-policy-binding'
+    - '$PROJECT_ID'
+    - '--member=serviceAccount:${_COMPUTE_SERVICE_ACCOUNT}'
+    - '--role=roles/secretmanager.secretAccessor'
 
 # 4. Desplegar la imagen en Cloud Run con la variable de entorno y permisos de red
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -34,6 +47,8 @@ steps:
     - '$_DEPLOY_REGION'
     - '--platform'
     - 'managed'
+    - '--service-account'
+    - '${_COMPUTE_SERVICE_ACCOUNT}'
     - '--set-env-vars'
     - 'NEXTJS_APP_URL=https://heymanito.com'
     - '--set-secrets=FIREBASE_SERVICE_ACCOUNT_KEY=FIREBASE_SERVICE_ACCOUNT_KEY:latest,GATEWAY_SECRET=GATEWAY_SECRET:latest'
