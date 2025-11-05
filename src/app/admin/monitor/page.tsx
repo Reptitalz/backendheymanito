@@ -137,10 +137,11 @@ export default function MonitorPage() {
 
     useEffect(() => {
         setIsClient(true);
-        const interval = setInterval(() => {
-            if (activities.length === 0) return;
+        if (activities.length === 0) return;
 
+        const interval = setInterval(() => {
             setActivities(prevActivities => {
+                if (prevActivities.length === 0) return prevActivities;
                 const randomAssistantIndex = Math.floor(Math.random() * prevActivities.length);
                 
                 return prevActivities.map((activity, index) => {
@@ -190,7 +191,7 @@ export default function MonitorPage() {
         }, 2500); 
 
         return () => clearInterval(interval);
-    }, [activities]); // Rerun interval logic when activities are loaded/updated
+    }, [activities.length]); // Rerun interval logic only when the number of activities changes
     
     const filteredActivities = activities.filter(activity =>
         activity.assistantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
