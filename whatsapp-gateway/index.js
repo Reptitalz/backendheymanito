@@ -4,10 +4,11 @@ import makeWASocket, { DisconnectReason } from "@whiskeysockets/baileys";
 import pino from "pino";
 import cors from "cors";
 import path from "path";
+import os from "os";
 import axios from 'axios';
 import FormData from 'form-data';
 import fs from "fs";
-import { getBaileysAuthState } from "./auth-state.js";
+import { getBaileysAuthState, removeSession } from "./auth-state.js";
 
 
 // === CONFIGURACIÓN ===
@@ -27,10 +28,10 @@ app.use(express.json());
 const sessions = {}; // guardará las conexiones por ID
 
 async function createSession(assistantId) {
-    const { state, saveCreds } = await getBaileysAuthState();
+    const { state, saveCreds } = await getBaileysAuthState(assistantId);
     const sock = makeWASocket({
         auth: state,
-        logger: baileysLogger, // Usar el logger silencioso para Baileys
+        logger: baileysLogger,
         printQRInTerminal: false,
         browser: ["HeyManito", "Cloud Run", "3.0"],
     });
@@ -50,7 +51,7 @@ async function createSession(assistantId) {
 
     if (connection === "open") {
       session.status = "connected";
-      session.qr = null; // Una vez conectado, el QR ya no es necesario
+      session.qr = null; 
       logger.info(`[${assistantId}] Conectado exitosamente.`);
     }
 
@@ -58,14 +59,19 @@ async function createSession(assistantId) {
       const reason = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = reason !== DisconnectReason.loggedOut;
       
-      logger.warn(`[${assistantId}] Conexión cerrada. Razón: ${reason}.`);
+      logger.warn(`[${assistantId}] Conexión cerrada. Razón: ${reason}. Reintentando: ${shouldReconnect}`);
       
       session.status = "disconnected";
 
       if (reason === DisconnectReason.loggedOut) {
           logger.info(`[${assistantId}] Sesión cerrada por el usuario. Limpiando...`);
-          // La limpieza de GCS podría manejarse aquí si es necesario
+          await removeSession(assistantId);
           delete sessions[assistantId];
+      } else if (reason === DisconnectReason.notAllowed) {
+          logger.error(`[${assistantId}] Error de conexión 405 (Not Allowed). La sesión es inválida. Eliminando y forzando nuevo QR.`);
+          await removeSession(assistantId);
+          delete sessions[assistantId];
+          // No reconectar, el próximo chequeo de /status creará una sesión limpia.
       } else if (shouldReconnect) {
         logger.info(`[${assistantId}] Se intentará reconectar automáticamente.`);
         createSession(assistantId).catch(err => logger.error(`[${assistantId}] Error al reiniciar la sesión:`, err));
@@ -94,8 +100,7 @@ async function createSession(assistantId) {
                 formData.append('message', msg.message.extendedTextMessage.text);
             else if (type === 'audioMessage') {
                 const audioBuffer = await sock.downloadMediaMessage(msg);
-                // Usamos una ruta temporal real
-                tempPath = path.join("/tmp", `temp_audio_${Date.now()}.ogg`);
+                tempPath = path.join(os.tmpdir(), `temp_audio_${Date.now()}.ogg`);
                 await fs.promises.writeFile(tempPath, audioBuffer);
                 formData.append('audio', fs.createReadStream(tempPath));
             } else return;
@@ -111,7 +116,6 @@ async function createSession(assistantId) {
             }
             await sock.sendPresenceUpdate('paused', sender);
 
-            // Limpiar archivo temporal si se usó
             if (tempPath) {
                 await fs.promises.unlink(tempPath);
             }
@@ -126,7 +130,6 @@ async function createSession(assistantId) {
   return sock;
 }
 
-// 🔹 Endpoint para obtener el estado
 app.get("/status", async (req, res) => {
   const { assistantId } = req.query;
   if (!assistantId) return res.status(400).json({ error: "Falta assistantId" });
@@ -136,7 +139,6 @@ app.get("/status", async (req, res) => {
     logger.info(`[${assistantId}] No hay sesión activa o está desconectada. Creando una nueva...`);
     try {
         await createSession(assistantId);
-        // La sesión se está inicializando. El frontend volverá a preguntar.
         return res.json({ status: "initializing" });
     } catch(e) {
         logger.error(`[${assistantId}] Error al crear sesión:`, e);
@@ -147,7 +149,6 @@ app.get("/status", async (req, res) => {
   res.json({ status: session.status, qr: session.status === 'qr' ? session.qr : null });
 });
 
-// Endpoint de salud para Cloud Run
 app.get("/", (req, res) => {
     res.status(200).send("Hey Manito! Gateway - OK");
 });
