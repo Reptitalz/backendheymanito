@@ -36,7 +36,9 @@ export default function ConectarPage() {
     const [status, setStatus] = useState<GatewayStatus>('loading');
     const [qr, setQr] = useState<string | null>(null);
     const [loadingMessage, setLoadingMessage] = useState("Inicializando conexión...");
+    const [progress, setProgress] = useState(0);
     
+    // Effect for polling the gateway status
     useEffect(() => {
         if (!assistantId) return;
 
@@ -52,25 +54,49 @@ export default function ConectarPage() {
               if (data.qr && data.qr !== qr) {
                 setQr(data.qr);
                 setLoadingMessage("¡Escanea el código para conectar!");
+                setProgress(100);
               }
             } else if (data.status === 'connected') {
                 setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
+                setProgress(100);
                 clearInterval(interval); // Detener polling
                 setTimeout(() => router.push('/dashboard/asistentes'), 2000);
             } else if (data.status === 'initializing' || data.status === 'loading') {
                 setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
             } else {
                  setLoadingMessage("Conexión perdida. Intentando reconectar...");
+                 setProgress(0); // Reset progress on disconnect
             }
           } catch (err) {
             console.error('Error fetching status:', err);
             setStatus('error');
             setLoadingMessage("Error de conexión con el gateway.");
+            setProgress(100); // Stop animation on error
           }
         }, 3000);
     
         return () => clearInterval(interval);
     }, [assistantId, qr, router]);
+    
+    // Effect for animating the progress bar
+    useEffect(() => {
+        if (status === 'loading' || status === 'initializing') {
+            const progressInterval = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 99) {
+                        clearInterval(progressInterval);
+                        return 99; // Wait at 99% for the final status
+                    }
+                    // Animate quickly at the start, then slow down
+                    if (prev < 60) return prev + 2;
+                    if (prev < 90) return prev + 0.5;
+                    return prev + 0.2;
+                });
+            }, 100);
+            return () => clearInterval(progressInterval);
+        }
+    }, [status]);
+
 
     useEffect(() => {
         if (qr && canvasRef.current) {
@@ -126,7 +152,7 @@ export default function ConectarPage() {
                     <div className="flex flex-col items-center gap-4 text-muted-foreground w-64 text-center">
                          <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
                         <p className="text-sm font-semibold">{loadingMessage}</p>
-                        <Progress value={50} className="w-full h-2 animate-pulse" />
+                        <Progress value={progress} className="w-full h-2" />
                         <p className="text-xs pt-2">Esto puede tardar hasta 30 segundos mientras se establece la conexión con WhatsApp.</p>
                     </div>
                 );
