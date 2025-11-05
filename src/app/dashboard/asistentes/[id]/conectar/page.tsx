@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -35,16 +35,15 @@ export default function ConectarPage() {
     
     const [status, setStatus] = useState<GatewayStatus>('loading');
     const [qr, setQr] = useState<string | null>(null);
-    const [loadingMessage, setLoadingMessage] = useState("Inicializando conexión...");
+    const [loadingMessage, setLoadingMessage] = useState("Estableciendo conexión con el gateway...");
     const [progress, setProgress] = useState(0);
     
-    // Effect for polling the gateway status
     useEffect(() => {
         if (!assistantId) return;
 
-        const interval = setInterval(async () => {
+        const pollStatus = async () => {
           try {
-            const res = await fetch(`${GATEWAY_URL}/status?assistantId=${assistantId}`);
+            const res = await fetch(`${GATEWAY_URL}/status`);
             if (!res.ok) throw new Error(`El servidor respondió con el estado: ${res.status}`);
             
             const data = await res.json();
@@ -59,53 +58,53 @@ export default function ConectarPage() {
             } else if (data.status === 'connected') {
                 setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
                 setProgress(100);
-                clearInterval(interval); // Detener polling
-                setTimeout(() => router.push('/dashboard/asistentes'), 2000);
             } else if (data.status === 'initializing' || data.status === 'loading') {
                 setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
             } else {
                  setLoadingMessage("Conexión perdida. Intentando reconectar...");
-                 setProgress(0); // Reset progress on disconnect
+                 setQr(null); // Limpiar QR si nos desconectamos
+                 setProgress(0);
             }
           } catch (err) {
             console.error('Error fetching status:', err);
             setStatus('error');
             setLoadingMessage("Error de conexión con el gateway.");
-            setProgress(100); // Stop animation on error
+            setProgress(100);
           }
-        }, 3000);
+        };
+
+        pollStatus(); // Poll immediately on mount
+        const interval = setInterval(pollStatus, 3000); // Continue polling every 3 seconds
     
         return () => clearInterval(interval);
-    }, [assistantId, qr, router]);
+    }, [assistantId, qr]);
     
-    // Effect for animating the progress bar
     useEffect(() => {
-        if (status === 'loading' || status === 'initializing') {
+        if (status === 'initializing' || status === 'loading') {
             const progressInterval = setInterval(() => {
                 setProgress(prev => {
                     if (prev >= 99) {
                         clearInterval(progressInterval);
-                        return 99; // Wait at 99% for the final status
+                        return 99;
                     }
-                    // Animate quickly at the start, then slow down
                     if (prev < 60) return prev + 2;
                     if (prev < 90) return prev + 0.5;
                     return prev + 0.2;
                 });
             }, 100);
             return () => clearInterval(progressInterval);
+        } else if (status === 'connected') {
+            setTimeout(() => router.push('/dashboard/asistentes'), 2000);
         }
-    }, [status]);
-
+    }, [status, router]);
 
     useEffect(() => {
         if (qr && canvasRef.current) {
-            QRCode.toCanvas(canvasRef.current, qr, { width: 256, errorCorrectionLevel: 'H' }, (error) => {
+            QRCode.toCanvas(canvasRef.current, qr, { width: 256, margin: 1, errorCorrectionLevel: 'H' }, (error) => {
                 if (error) console.error("Error generating QR code canvas:", error);
             });
         }
     }, [qr]);
-
 
     const getTitle = () => {
         if (isAssistantLoading) return <Skeleton className="h-6 w-48" />;
@@ -117,7 +116,7 @@ export default function ConectarPage() {
         if (status === 'qr' && qr) {
              return (
                 <div className="flex flex-col items-center gap-4">
-                    <canvas ref={canvasRef} className="rounded-lg bg-white p-2" />
+                    <canvas ref={canvasRef} className="rounded-lg bg-white p-2 shadow-lg" />
                     <p className="text-sm text-muted-foreground text-center max-w-xs pt-4 font-semibold">
                         {loadingMessage}
                     </p>
@@ -150,7 +149,9 @@ export default function ConectarPage() {
             default:
                 return (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground w-64 text-center">
-                         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+                         <div className="relative">
+                            <Loader2 className="h-24 w-24 animate-spin text-primary" />
+                         </div>
                         <p className="text-sm font-semibold">{loadingMessage}</p>
                         <Progress value={progress} className="w-full h-2" />
                         <p className="text-xs pt-2">Esto puede tardar hasta 30 segundos mientras se establece la conexión con WhatsApp.</p>
@@ -162,7 +163,7 @@ export default function ConectarPage() {
 
     return (
         <div className="flex items-center justify-center w-full min-h-screen">
-            <Card className="w-full max-w-lg">
+            <Card className="w-full max-w-lg shadow-xl">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                          <Button variant="outline" size="icon" asChild>
