@@ -54,6 +54,7 @@ async function createSession(assistantId) {
 
     if (connection === "open") {
       session.status = "connected";
+      session.qr = null; // Una vez conectado, el QR ya no es necesario
       logger.info(`[${assistantId}] Conectado exitosamente.`);
     }
 
@@ -62,25 +63,25 @@ async function createSession(assistantId) {
       const shouldReconnect = reason !== DisconnectReason.loggedOut;
       
       logger.warn(`[${assistantId}] Conexión cerrada. Razón: ${reason}. Reintentando: ${shouldReconnect}`);
+      
+      session.status = "disconnected";
 
-      if (!shouldReconnect) {
-        logger.info(`[${assistantId}] Sesión cerrada permanentemente. Limpiando...`);
-        if (fs.existsSync(sessionPath)) {
-            await fsp.rm(sessionPath, { recursive: true, force: true });
-        }
-        delete sessions[assistantId];
-      } else {
-        session.status = "disconnected";
-        // La librería intentará reconectar automáticamente. 
-        // Si el error es 405 (no permitido), limpiamos y forzamos un nuevo QR.
-        if (reason === DisconnectReason.notAllowed) {
-            logger.error(`[${assistantId}] Error de sesión (405). Forzando limpieza y reinicio.`);
+      if (reason === DisconnectReason.loggedOut) {
+          logger.info(`[${assistantId}] Sesión cerrada por el usuario. Limpiando...`);
+          if (fs.existsSync(sessionPath)) {
+              await fsp.rm(sessionPath, { recursive: true, force: true });
+          }
+          delete sessions[assistantId];
+      } else if (reason === DisconnectReason.notAllowed) {
+            logger.error(`[${assistantId}] Error de sesión irrecuperable (405). Forzando limpieza y reinicio.`);
             if (fs.existsSync(sessionPath)) {
                 await fsp.rm(sessionPath, { recursive: true, force: true });
             }
             delete sessions[assistantId];
             // La próxima llamada a /status creará una nueva sesión desde cero.
-        }
+      } else if (shouldReconnect) {
+        // La librería intentará reconectar automáticamente para otros errores (ej. de red)
+        logger.info(`[${assistantId}] Se intentará reconectar automáticamente.`);
       }
     }
   });
@@ -147,7 +148,7 @@ app.get("/status", async (req, res) => {
     }
   }
 
-  res.json({ status: session.status, qr: session.qr });
+  res.json({ status: session.status, qr: session.status === 'qr' ? session.qr : null });
 });
 
 // Endpoint de salud para Cloud Run

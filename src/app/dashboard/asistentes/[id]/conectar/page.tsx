@@ -43,23 +43,24 @@ export default function ConectarPage() {
         const interval = setInterval(async () => {
           try {
             const res = await fetch(`${GATEWAY_URL}/status?assistantId=${assistantId}`);
+            if (!res.ok) throw new Error(`El servidor respondió con el estado: ${res.status}`);
+            
             const data = await res.json();
             setStatus(data.status);
     
             if (data.status === 'qr') {
-              // Si el estado es QR, hacemos una segunda llamada para obtener el QR
-              const qrRes = await fetch(`${GATEWAY_URL}/qr?assistantId=${assistantId}`);
-              const qrData = await qrRes.json();
-              if (qrData.qr !== qr) {
-                setQr(qrData.qr);
+              if (data.qr && data.qr !== qr) {
+                setQr(data.qr);
                 setLoadingMessage("¡Escanea el código para conectar!");
               }
             } else if (data.status === 'connected') {
                 setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
                 clearInterval(interval); // Detener polling
                 setTimeout(() => router.push('/dashboard/asistentes'), 2000);
-            } else {
+            } else if (data.status === 'initializing' || data.status === 'loading') {
                 setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
+            } else {
+                 setLoadingMessage("Conexión perdida. Intentando reconectar...");
             }
           } catch (err) {
             console.error('Error fetching status:', err);
