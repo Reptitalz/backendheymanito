@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm:genkit:watch\" \"npm:next:dev\"",
+    "dev": "concurrently \"npm:genkit:start\" \"npm:next:dev\"",
     "next:dev": "next dev --port 9002 --hostname 0.0.0.0",
-    "genkit:watch": "genkit watch",
+    "genkit:start": "genkit start",
     "build": "next build",
     "start": "next start -p 9002",
     "lint": "next lint"
