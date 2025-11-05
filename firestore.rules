@@ -101,7 +101,7 @@ service cloud.firestore {
       }
       
       match /transactions/{transactionId} {
-        allow get, list: if isOwner(userId) || isAdmin();
+        allow get, list: if request.auth.uid == userId || isAdmin();
         // Transactions should only be created by a trusted backend process (e.g., Stripe webhook)
         allow create, update, delete: if false; 
       }
