@@ -1,19 +1,4 @@
 
-/**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model, validates data schemas, and provides scoped admin access.
- *
- * Data Structure & Validation:
- * - Each path has schema validation to enforce data types, formats, and required fields.
- * - Immutable fields like `userId` and `createdAt` are protected against modification after creation.
- * - Server timestamps are enforced for creation and update times.
- *
- * Key Security Decisions:
- * - User data is strictly owned and accessible only by the owner or an admin.
- * - Admins have read-only access to most user data for monitoring but limited write capabilities to prevent accidental modification.
- * - Public data access is explicitly denied unless specified (e.g., plans).
- * - Collection group queries are restricted to admins for system-wide monitoring.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -27,8 +12,8 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // This email must match the admin user's email.
     function isAdmin() {
+      // This email must match the admin user's email.
       return request.auth.token.email == "reptitalz@heymanito.com";
     }
 
@@ -57,7 +42,6 @@ service cloud.firestore {
                data.phone is string && data.phone.size() > 5 &&
                data.userId == userId;
     }
-
 
     // --- Path Rules ---
 
@@ -101,7 +85,8 @@ service cloud.firestore {
       }
       
       match /transactions/{transactionId} {
-        allow get, list: if request.auth.uid == userId || isAdmin();
+        // Correct rule: allow list and get for the owner or admin
+        allow get, list: if isOwner(userId) || isAdmin();
         // Transactions should only be created by a trusted backend process (e.g., Stripe webhook)
         allow create, update, delete: if false; 
       }
