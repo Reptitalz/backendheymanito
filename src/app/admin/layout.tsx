@@ -48,27 +48,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   useEffect(() => {
-    // If not loading and no user, force to admin login page.
-    if (!isUserLoading && !user && pathname !== '/admin') {
-      router.push('/admin');
-      return;
+    if (isUserLoading) return; // Wait until user status is resolved
+
+    const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    
+    if (!user) {
+        // If not logged in, redirect to the general login page, not admin.
+        router.push('/login');
+        return;
     }
     
-    // If there is a user, check if they are the admin.
-    if (!isUserLoading && user) {
-        const isAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-        
-        // If they are on the login page and they are the admin, redirect to dashboard.
-        if (isAdmin && pathname === '/admin') {
-            router.push('/admin/dashboard');
-            return;
-        }
-
-        // If they are on any other admin page and they are NOT the admin, redirect away.
-        if (!isAdmin && pathname.startsWith('/admin')) {
-             router.push('/login'); // or to a generic 403 page
-             return;
-        }
+    if (!isAdmin) {
+        // If logged in but not an admin, send to their own dashboard.
+        router.push('/dashboard');
+        return;
+    }
+    
+    // If we've reached here, user is an admin.
+    // If they are on the root admin page, redirect them to the admin dashboard.
+    if (pathname === '/admin') {
+        router.push('/admin/dashboard');
     }
 
   }, [user, isUserLoading, router, pathname]);

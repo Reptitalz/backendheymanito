@@ -89,13 +89,14 @@ export default function MonitorPage() {
     const [isClient, setIsClient] = useState(false);
     
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
+    const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
     const assistantsQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        // Use collectionGroup to query all 'assistants' collections across all users
+        // Only run the query if we have a firestore instance AND the user is a confirmed admin
+        if (!firestore || !isAdmin) return null;
         return collectionGroup(firestore, 'assistants') as Query;
-    }, [firestore, user]);
+    }, [firestore, isAdmin]);
 
     const { data: allAssistants, isLoading: isAssistantsLoading } = useCollection<Assistant>(assistantsQuery);
 
@@ -115,7 +116,6 @@ export default function MonitorPage() {
                         console.error(`Error fetching user ${assistant.userId}:`, error);
                     }
                     
-                    // Check if this assistant is already in the activities state to preserve its processes
                     const existingActivity = activities.find(a => a.assistantId === assistant.id);
 
                     return {
@@ -131,7 +131,6 @@ export default function MonitorPage() {
             };
             fetchUserNames();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [allAssistants, firestore]);
 
 
@@ -154,7 +153,7 @@ export default function MonitorPage() {
                             
                             const newProcess: ProcessStep = {
                                 ...processTemplates[0],
-                                id: Date.now(), // Use timestamp for unique ID
+                                id: Date.now(),
                                 status: 'in_progress',
                                 log: "Recibiendo paquete de audio..."
                             };
@@ -175,7 +174,7 @@ export default function MonitorPage() {
                                  const nextStepTemplate = processTemplates[currentProcessIndex + 1];
                                  currentProcesses.push({
                                      ...nextStepTemplate,
-                                     id: Date.now(), // Unique ID
+                                     id: Date.now(),
                                      status: shouldFail ? 'failed' : 'in_progress',
                                      log: shouldFail ? 'Error: Fallo en la red' : `Iniciando ${nextStepTemplate.name.toLowerCase()}`
                                  });
@@ -191,14 +190,14 @@ export default function MonitorPage() {
         }, 2500); 
 
         return () => clearInterval(interval);
-    }, [activities.length]); // Rerun interval logic only when the number of activities changes
+    }, [activities.length]);
     
     const filteredActivities = activities.filter(activity =>
         activity.assistantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         activity.userName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (!isClient) return null;
+    if (!isClient || isUserLoading) return null;
 
     const renderLoadingState = () => (
          <div className="space-y-6">
