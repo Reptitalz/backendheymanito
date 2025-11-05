@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, Timestamp } from "firebase/firestore";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import GooglePayButton from "@/components/payments/GooglePayButton";
@@ -27,6 +27,16 @@ interface Assistant {
   };
 }
 
+interface Transaction {
+    id: string;
+    description: string;
+    amount: number;
+    credits: number;
+    status: 'completed' | 'pending' | 'failed';
+    createdAt: Timestamp;
+}
+
+
 export default function CreditsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -36,7 +46,13 @@ export default function CreditsPage() {
         return collection(firestore, 'users', user.uid, 'assistants');
     }, [user, firestore]);
 
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'transactions');
+    }, [user, firestore]);
+
     const { data: assistants, isLoading: isAssistantsLoading } = useCollection<Assistant>(assistantsQuery);
+    const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
 
     const { usedCredits, totalCredits } = useMemo(() => {
         if (!assistants) return { usedCredits: 0, totalCredits: 0 };
@@ -57,12 +73,6 @@ export default function CreditsPage() {
     };
 
     const percentageUsed = usage.totalCredits > 0 ? (usage.creditsUsed / usage.totalCredits) * 100 : 0;
-
-    const history = [
-        { id: "H-001", date: "15 de Junio, 2024", description: "Recarga de 10 créditos", amount: "-$85.00", status: "Completado" },
-        { id: "H-002", date: "1 de Junio, 2024", description: "Inicio de ciclo", amount: "+50 créditos", status: "Completado" },
-        { id: "H-003", date: "28 de Mayo, 2024", description: "Uso de Asistente de Ventas", amount: "-2.3 créditos", status: "Facturado" },
-    ];
     
     const plans = [
       {
@@ -112,6 +122,25 @@ export default function CreditsPage() {
         isGooglePay: false,
       },
     ];
+
+    const formatTransactionDate = (timestamp: Timestamp) => {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp.seconds * 1000).toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    const formatTransactionAmount = (transaction: Transaction) => {
+        if (transaction.status !== 'completed') {
+            return transaction.status;
+        }
+        if (transaction.amount > 0) {
+            return `-$${(transaction.amount / 100).toFixed(2)} MXN`;
+        }
+        return `+${transaction.credits} créditos`;
+    }
       
     const CreditsUsageCard = () => {
         if(isAssistantsLoading) {
@@ -311,13 +340,27 @@ export default function CreditsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {history.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{item.date}</TableCell>
-                                        <TableCell>{item.description}</TableCell>
-                                        <TableCell className="text-right font-medium">{item.amount}</TableCell>
+                                {isTransactionsLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center">
+                                            Cargando historial...
+                                        </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : transactions && transactions.length > 0 ? (
+                                    transactions.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{formatTransactionDate(item.createdAt)}</TableCell>
+                                            <TableCell>{item.description}</TableCell>
+                                            <TableCell className="text-right font-medium">{formatTransactionAmount(item)}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                     <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center">
+                                            No hay transacciones todavía.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>

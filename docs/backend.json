@@ -55,6 +55,22 @@
             "userId": { "type": "string", "description": "The ID of the user who owns this client." }
         },
         "required": ["name", "phone", "userId"]
+    },
+    "Transaction": {
+        "title": "Transaction",
+        "description": "Represents a credit purchase or transaction.",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string", "description": "The ID of the user who made the transaction." },
+            "description": { "type": "string", "description": "Description of the transaction (e.g., 'Paquete Básico')." },
+            "credits": { "type": "number", "description": "Number of credits purchased." },
+            "amount": { "type": "number", "description": "Amount paid in the smallest currency unit (e.g., cents)." },
+            "currency": { "type": "string", "description": "Currency of the transaction (e.g., 'mxn')." },
+            "status": { "type": "string", "enum": ["completed", "pending", "failed"], "description": "The status of the transaction." },
+            "stripeSessionId": { "type": "string", "description": "The ID of the Stripe Checkout session." },
+            "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the transaction was created." }
+        },
+        "required": ["userId", "description", "credits", "amount", "currency", "status", "createdAt"]
     }
   },
   "auth": {
@@ -74,6 +90,10 @@
     "/users/{userId}/clients/{clientId}": {
       "schema": { "$ref": "#/entities/Client" },
       "description": "Stores the clients managed by a specific user."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Stores the credit purchase history for a specific user."
     }
   }
 }

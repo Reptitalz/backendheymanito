@@ -116,6 +116,12 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
+    match /users/{userId}/transactions/{transactionId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      // Transactions should only be created by a trusted backend process (e.g., Stripe webhook)
+      allow create, update, delete: if false; 
+    }
+
     // Collection group query for assistants, only for admins.
     match /{path=**}/assistants/{assistantId} {
       allow get, list: if isAdmin();
