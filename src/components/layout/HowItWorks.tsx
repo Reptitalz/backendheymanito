@@ -79,7 +79,7 @@ export function HowItWorks() {
                 </motion.div>
                 
                 <motion.div 
-                    className="grid md:grid-cols-3 gap-8"
+                    className="grid md:grid-cols-1 gap-8 max-w-4xl mx-auto"
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="visible"
@@ -90,22 +90,26 @@ export function HowItWorks() {
                             key={index}
                             variants={cardVariants}
                         >
-                            <Card className="text-center h-full shadow-lg hover:shadow-primary/20 transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden flex flex-col">
-                                <CardHeader className="items-center">
-                                    <motion.div 
-                                      className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4 animate-float"
-                                      style={{animationDelay: `${index * 0.3}s`}}
-                                    >
-                                        {step.icon}
-                                    </motion.div>
-                                    <CardTitle className="font-headline text-2xl">{step.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-1 flex flex-col">
-                                    <p className="text-muted-foreground mb-4">{step.description}</p>
-                                    <div className="flex-grow mt-4 h-32 bg-muted/50 rounded-lg flex items-center justify-center">
+                            <Card className="shadow-lg hover:shadow-primary/20 transition-shadow duration-300 bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
+                                <div className="grid md:grid-cols-3 items-center">
+                                    <div className="md:col-span-2 p-6 md:p-8">
+                                        <div className="flex items-center gap-6">
+                                            <motion.div 
+                                                className="hidden md:block bg-primary/10 p-4 rounded-full w-fit animate-float"
+                                                style={{animationDelay: `${index * 0.3}s`}}
+                                            >
+                                                {step.icon}
+                                            </motion.div>
+                                            <div>
+                                                <CardTitle className="font-headline text-2xl mb-2">{step.title}</CardTitle>
+                                                <p className="text-muted-foreground">{step.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-1 p-6 bg-muted/50 h-full flex items-center justify-center min-h-[150px]">
                                         <span className="text-xs text-muted-foreground italic">Canvas para animación</span>
                                     </div>
-                                </CardContent>
+                                </div>
                             </Card>
                         </motion.div>
                     ))}
