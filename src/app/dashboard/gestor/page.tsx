@@ -8,15 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
+import MonitorContent from '@/app/admin/monitor/page';
 
 const managementSections = [
-    { id: "clients", href: "/dashboard/clients", label: "Clientes", icon: Users },
-    { id: "processes", href: "/dashboard/processes", label: "Procesos", icon: BrainCircuit },
-    { id: "authorizations", href: "/dashboard/authorizations", label: "Autorizaciones", icon: ShieldCheck },
-    { id: "sales", href: "/dashboard/sales", label: "Ventas", icon: ShoppingCart },
-    { id: "payments", href: "/dashboard/payments", label: "Pagos", icon: CreditCard },
-    { id: "images", href: "/dashboard/images", label: "Imágenes", icon: ImageIcon },
-    { id: "database", href: "/dashboard/database", label: "Base de Datos", icon: Database },
+    { id: "clients", href: "/dashboard/gestor/clients", label: "Clientes", icon: Users, isImplemented: false },
+    { id: "processes", href: "/dashboard/gestor/processes", label: "Procesos", icon: BrainCircuit, isImplemented: true },
+    { id: "authorizations", href: "/dashboard/gestor/authorizations", label: "Autorizaciones", icon: ShieldCheck, isImplemented: false },
+    { id: "sales", href: "/dashboard/gestor/sales", label: "Ventas", icon: ShoppingCart, isImplemented: false },
+    { id: "payments", href: "/dashboard/gestor/payments", label: "Pagos", icon: CreditCard, isImplemented: false },
+    { id: "images", href: "/dashboard/gestor/images", label: "Imágenes", icon: ImageIcon, isImplemented: false },
+    { id: "database", href: "/dashboard/gestor/database", label: "Base de Datos", icon: Database, isImplemented: false },
 ];
 
 const PlaceholderContent = ({ section }: { section: { label: string, icon: React.ElementType }}) => (
@@ -36,10 +37,25 @@ const PlaceholderContent = ({ section }: { section: { label: string, icon: React
     </Card>
 );
 
-export default function ImagesPage() {
+export default function GestorPage() {
     const pathname = usePathname();
     const router = useRouter();
-    const section = managementSections.find(s => s.href === pathname);
+
+    // Find the currently active section based on the URL path
+    const activeSection = managementSections.find(s => pathname.startsWith(s.href));
+
+    // If no section is matched (i.e., we are at /dashboard/gestor), default to the first one
+    const sectionToDisplay = activeSection || managementSections[0];
+
+    const renderContent = () => {
+        if (!sectionToDisplay) return null;
+
+        if (sectionToDisplay.id === "processes" && sectionToDisplay.isImplemented) {
+            return <MonitorContent />;
+        }
+        
+        return <PlaceholderContent section={sectionToDisplay} />;
+    }
 
     return (
         <>
@@ -50,12 +66,12 @@ export default function ImagesPage() {
                 </div>
             </div>
 
-            {/* Mobile navigation */}
+             {/* Mobile navigation */}
             <div className="md:hidden pt-4">
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="outline" className="w-full justify-between">
-                            <span>{section?.label || "Seleccionar sección"}</span>
+                            <span>{sectionToDisplay?.label || "Seleccionar sección"}</span>
                             <ChevronsUpDown className="h-4 w-4 opacity-50" />
                         </Button>
                     </SheetTrigger>
@@ -68,7 +84,7 @@ export default function ImagesPage() {
                                 <Link key={navSection.id} href={navSection.href}>
                                     <Card className={cn(
                                         "flex flex-col items-center justify-center p-4 h-32 text-center",
-                                        pathname === navSection.href ? "border-primary ring-2 ring-primary" : ""
+                                        pathname.startsWith(navSection.href) ? "border-primary ring-2 ring-primary" : ""
                                     )}>
                                         <navSection.icon className="h-8 w-8 text-primary mb-2" />
                                         <p className="text-sm font-semibold">{navSection.label}</p>
@@ -80,13 +96,14 @@ export default function ImagesPage() {
                 </Sheet>
             </div>
 
+
             <div className="grid md:grid-cols-4 gap-8 pt-4">
                 <aside className="hidden md:flex md:col-span-1 flex-col">
                      <nav className="flex flex-col gap-1">
                         {managementSections.map(navSection => (
                             <Button
                                 key={navSection.id}
-                                variant={pathname === navSection.href ? "default" : "ghost"}
+                                variant={pathname.startsWith(navSection.href) ? "default" : "ghost"}
                                 className="justify-start gap-3"
                                 asChild
                             >
@@ -99,7 +116,7 @@ export default function ImagesPage() {
                     </nav>
                 </aside>
                 <main className="md:col-span-3">
-                    {section && <PlaceholderContent section={section} />}
+                    {renderContent()}
                 </main>
             </div>
         </>

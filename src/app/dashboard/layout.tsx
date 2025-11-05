@@ -23,7 +23,7 @@ import { useUser, useAuth, useCollection, useFirestore, useMemoFirebase } from '
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/asistentes", label: "Asistentes", icon: Bot },
-  { href: "/dashboard/clients", label: "Gestor", icon: Target },
+  { href: "/dashboard/gestor", label: "Gestor", icon: Target },
   { href: "/dashboard/credits", label: "Créditos", icon: CreditCard },
 ];
 
