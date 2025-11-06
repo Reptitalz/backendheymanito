@@ -39,14 +39,25 @@ export default function ConectarPage() {
     const [progress, setProgress] = useState(0);
     
     const pollStatus = async () => {
-      setStatus('loading');
-      setProgress(0);
-      setLoadingMessage("Estableciendo conexión con el gateway...");
+      // Don't reset progress if we are just polling
+      if (status === 'loading' && progress === 0) {
+        setProgress(0);
+        setLoadingMessage("Estableciendo conexión con el gateway...");
+      }
+
       try {
         const res = await fetch(`${GATEWAY_URL}/status`);
         if (!res.ok) throw new Error(`El servidor respondió con el estado: ${res.status}`);
         
         const data = await res.json();
+        
+        // If we successfully fetched, but the status is still initializing,
+        // we can confirm we are connected to the server.
+        if (data.status === 'initializing' || data.status === 'disconnected') {
+            setLoadingMessage("¡Conexión con el servidor exitosa! Esperando QR de WhatsApp...");
+            setQr(null);
+        }
+
         setStatus(data.status);
 
         if (data.status === 'qr') {
@@ -58,12 +69,6 @@ export default function ConectarPage() {
         } else if (data.status === 'connected') {
             setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
             setProgress(100);
-        } else if (data.status === 'initializing' || data.status === 'loading') {
-            setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
-        } else {
-             setLoadingMessage("Conexión perdida. Intentando reconectar...");
-             setQr(null); // Limpiar QR si nos desconectamos
-             setProgress(0);
         }
       } catch (err) {
         console.error('Error fetching status:', err);
@@ -77,19 +82,18 @@ export default function ConectarPage() {
         if (!assistantId) return;
 
         const interval = setInterval(() => {
-            // Solo sigue sondeando si no estamos en un estado de error o ya conectados.
             if (status !== 'error' && status !== 'connected') {
                 pollStatus();
             }
-        }, 5000); // Poll every 5 seconds
+        }, 5000);
 
-        pollStatus(); // Poll immediately on mount
+        pollStatus();
     
         return () => clearInterval(interval);
     }, [assistantId]);
     
     useEffect(() => {
-        if (status === 'initializing' || status === 'loading') {
+        if (status === 'initializing' || status === 'loading' || status === 'disconnected') {
             const progressInterval = setInterval(() => {
                 setProgress(prev => {
                     if (prev >= 99) {
@@ -150,7 +154,7 @@ export default function ConectarPage() {
                         <WifiOff className="h-24 w-24" />
                         <p className="font-semibold text-lg">{loadingMessage}</p>
                         <p className="text-xs max-w-xs">No se pudo comunicar con el servidor del gateway. Puede estar reiniciándose o tener un problema. Inténtalo de nuevo.</p>
-                        <Button onClick={pollStatus} variant="destructive" className="mt-4">
+                        <Button onClick={() => { setStatus('loading'); setProgress(0); pollStatus(); }} variant="destructive" className="mt-4">
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Reintentar Conexión
                         </Button>
@@ -160,14 +164,24 @@ export default function ConectarPage() {
             case 'initializing':
             case 'disconnected':
             default:
+                const isConnectedToServer = status !== 'loading';
                 return (
                     <div className="flex flex-col items-center gap-4 text-muted-foreground w-64 text-center">
                          <div className="relative">
-                            <Loader2 className="h-24 w-24 animate-spin text-primary" />
+                            {isConnectedToServer ? (
+                               <Wifi className="h-24 w-24 text-green-500" />
+                            ) : (
+                               <Loader2 className="h-24 w-24 animate-spin text-primary" />
+                            )}
                          </div>
                         <p className="text-sm font-semibold">{loadingMessage}</p>
                         <Progress value={progress} className="w-full h-2" />
-                        <p className="text-xs pt-2">Esto puede tardar hasta 30 segundos mientras se establece la conexión con WhatsApp.</p>
+                        <p className="text-xs pt-2">
+                           {isConnectedToServer 
+                             ? "La conexión con WhatsApp puede tardar hasta 30 segundos."
+                             : "Intentando conectar con tu servidor..."
+                           }
+                        </p>
                     </div>
                 );
         }
