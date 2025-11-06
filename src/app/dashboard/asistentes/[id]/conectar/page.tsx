@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Wifi, WifiOff, Loader2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -38,46 +38,55 @@ export default function ConectarPage() {
     const [loadingMessage, setLoadingMessage] = useState("Estableciendo conexión con el gateway...");
     const [progress, setProgress] = useState(0);
     
+    const pollStatus = async () => {
+      setStatus('loading');
+      setProgress(0);
+      setLoadingMessage("Estableciendo conexión con el gateway...");
+      try {
+        const res = await fetch(`${GATEWAY_URL}/status`);
+        if (!res.ok) throw new Error(`El servidor respondió con el estado: ${res.status}`);
+        
+        const data = await res.json();
+        setStatus(data.status);
+
+        if (data.status === 'qr') {
+          if (data.qr && data.qr !== qr) {
+            setQr(data.qr);
+            setLoadingMessage("¡Escanea el código para conectar!");
+            setProgress(100);
+          }
+        } else if (data.status === 'connected') {
+            setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
+            setProgress(100);
+        } else if (data.status === 'initializing' || data.status === 'loading') {
+            setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
+        } else {
+             setLoadingMessage("Conexión perdida. Intentando reconectar...");
+             setQr(null); // Limpiar QR si nos desconectamos
+             setProgress(0);
+        }
+      } catch (err) {
+        console.error('Error fetching status:', err);
+        setStatus('error');
+        setLoadingMessage("Error de conexión con el gateway.");
+        setProgress(100);
+      }
+    };
+
     useEffect(() => {
         if (!assistantId) return;
 
-        const pollStatus = async () => {
-          try {
-            const res = await fetch(`${GATEWAY_URL}/status`);
-            if (!res.ok) throw new Error(`El servidor respondió con el estado: ${res.status}`);
-            
-            const data = await res.json();
-            setStatus(data.status);
-    
-            if (data.status === 'qr') {
-              if (data.qr && data.qr !== qr) {
-                setQr(data.qr);
-                setLoadingMessage("¡Escanea el código para conectar!");
-                setProgress(100);
-              }
-            } else if (data.status === 'connected') {
-                setLoadingMessage("¡Conectado! Redirigiendo al dashboard...");
-                setProgress(100);
-            } else if (data.status === 'initializing' || data.status === 'loading') {
-                setLoadingMessage("Creando sesión y esperando el código QR de WhatsApp...");
-            } else {
-                 setLoadingMessage("Conexión perdida. Intentando reconectar...");
-                 setQr(null); // Limpiar QR si nos desconectamos
-                 setProgress(0);
+        const interval = setInterval(() => {
+            // Solo sigue sondeando si no estamos en un estado de error o ya conectados.
+            if (status !== 'error' && status !== 'connected') {
+                pollStatus();
             }
-          } catch (err) {
-            console.error('Error fetching status:', err);
-            setStatus('error');
-            setLoadingMessage("Error de conexión con el gateway.");
-            setProgress(100);
-          }
-        };
+        }, 5000); // Poll every 5 seconds
 
         pollStatus(); // Poll immediately on mount
-        const interval = setInterval(pollStatus, 3000); // Continue polling every 3 seconds
     
         return () => clearInterval(interval);
-    }, [assistantId, qr]);
+    }, [assistantId]);
     
     useEffect(() => {
         if (status === 'initializing' || status === 'loading') {
@@ -140,7 +149,11 @@ export default function ConectarPage() {
                     <div className="flex flex-col items-center gap-4 text-destructive text-center">
                         <WifiOff className="h-24 w-24" />
                         <p className="font-semibold text-lg">{loadingMessage}</p>
-                        <p className="text-xs max-w-xs">No se pudo comunicar con el servidor del gateway. Puede estar reiniciándose o tener un problema. Inténtalo de nuevo en unos minutos.</p>
+                        <p className="text-xs max-w-xs">No se pudo comunicar con el servidor del gateway. Puede estar reiniciándose o tener un problema. Inténtalo de nuevo.</p>
+                        <Button onClick={pollStatus} variant="destructive" className="mt-4">
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Reintentar Conexión
+                        </Button>
                     </div>
                 );
             case 'loading':
