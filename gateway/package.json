@@ -1,0 +1,22 @@
+
+{
+  "name": "heymanito-gateway",
+  "version": "1.0.0",
+  "description": "WhatsApp Gateway for HeyManito",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^7.11.0",
+    "@whiskeysockets/baileys": "^6.7.5",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pino": "^9.2.0",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "pm2": "^5.4.2"
+  }
+}

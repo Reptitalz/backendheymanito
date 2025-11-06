@@ -1,50 +1,26 @@
+
+# Este archivo ya no es necesario para el despliegue del gateway si se usa una VM.
+# Se deja como referencia o para el despliegue del frontend de Next.js en el futuro.
+# Para desplegar el gateway en la VM, sigue las instrucciones de creación de VM con el startup-script.
 steps:
-  # 1. Construir la imagen del Gateway
-  - name: 'gcr.io/cloud-builders/docker'
-    dir: 'gateway'
-    args:
-      - 'build'
-      - '-t'
-      - '${_DEPLOY_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
-      - '.'
-    id: 'Build Gateway'
-
-  # 2. Subir la imagen del Gateway
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - '${_DEPLOY_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
-    id: 'Push Gateway'
-
-  # 3. Desplegar a Cloud Run
+  # Despliegue del Frontend (Ejemplo, actualmente no configurado)
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['install']
+    id: 'Install Frontend Dependencies'
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build']
+    id: 'Build Frontend'
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
+    entrypoint: gcloud
     args:
-      - 'run'
+      - 'app'
       - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image'
-      - '${_DEPLOY_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
-      - '--region'
-      - '${_DEPLOY_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
-      - '--set-env-vars'
-      - 'BUCKET_NAME=manito-sessions,GEMINI_API_KEY=${_GEMINI_API_KEY}'
-      - '--service-account'
-      - 'whatsapp-gateway-sa@${PROJECT_ID}.iam.gserviceaccount.com'
-    id: 'Deploy Gateway'
-
-images:
-  - '${_DEPLOY_REGION}-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '--project=$PROJECT_ID'
+    id: 'Deploy Frontend to App Engine'
 
 substitutions:
-  _SERVICE_NAME: servidormanito
+  _SERVICE_NAME: servidormanito-frontend
   _DEPLOY_REGION: europe-west1
-  _GEMINI_API_KEY: your-gemini-api-key
 
 options:
   logging: CLOUD_LOGGING_ONLY
