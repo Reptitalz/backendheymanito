@@ -46,8 +46,12 @@ npm install
 echo "✅ 5/6 - Instalando y configurando PM2..."
 # Instala PM2 globalmente
 npm install pm2 -g
-# Inicia el gateway con PM2
-pm2 start index.js --name "whatsapp-gateway"
+
+# IMPORTANTE: Define aquí el nombre de tu bucket de Google Cloud Storage
+export BUCKET_NAME="tu-nombre-de-bucket-aqui"
+
+# Inicia el gateway con PM2, pasando la variable de entorno
+pm2 start index.js --name "whatsapp-gateway" -- --
 # Configura PM2 para que se inicie automáticamente en los reinicios del sistema
 pm2 startup
 pm2 save
