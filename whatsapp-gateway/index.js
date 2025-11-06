@@ -1,99 +1,129 @@
-import express from "express";
-import makeWASocket, { useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys";
-import qrcode from "qrcode";
-import fs from "fs/promises";
-import path from "path";
+
+import express from 'express';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
+import pino from 'pino';
+import { Storage } from '@google-cloud/storage';
+import fs from 'fs/promises';
+import path from 'path';
+import cors from 'cors';
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-// Permitir CORS para que el frontend pueda hacer peticiones
-import cors from 'cors';
-app.use(cors());
+// IMPORTANTE: Debes crear un bucket en Google Cloud Storage y poner el nombre aquí.
+// Opcionalmente, puedes configurarlo como una variable de entorno en tu VM.
+const bucketName = process.env.WHATSAPP_BUCKET_NAME || 'heymanito-sessions-bucket'; 
 
-const sessionPath = path.join(process.cwd(), "session");
+const storage = new Storage();
+const authFolder = path.join(process.cwd(), 'session_auth_info');
 
+let sock;
 let latestQR = null;
 let connectionStatus = 'initializing'; // 'initializing', 'qr', 'connected', 'disconnected'
 
-// Función para limpiar la sesión
-const clearSession = async () => {
+// Descarga la sesión desde Google Cloud Storage al iniciar
+async function downloadAuthState() {
   try {
-    await fs.rm(sessionPath, { recursive: true, force: true });
-    console.log("Sesión local eliminada.");
-  } catch (error) {
-    console.error("Error al limpiar la sesión:", error);
+    await fs.mkdir(authFolder, { recursive: true });
+    const [files] = await storage.bucket(bucketName).getFiles({ prefix: 'auth_state/' });
+    if (files.length === 0) {
+      console.log('No se encontró estado de autenticación previo, se creará uno nuevo.');
+      return;
+    }
+    for (const file of files) {
+      const dest = path.join(authFolder, path.basename(file.name));
+      await file.download({ destination: dest });
+    }
+    console.log('Estado de autenticación descargado desde el bucket.');
+  } catch (err) {
+    console.error('Error al descargar el estado de autenticación:', err);
+    console.log('Iniciando sin estado de autenticación previo.');
   }
-};
+}
 
+// Sube la sesión a Google Cloud Storage cada vez que se actualiza
+async function uploadAuthState() {
+  try {
+    const files = await fs.readdir(authFolder);
+    for (const file of files) {
+      const filePath = path.join(authFolder, file);
+      if ((await fs.lstat(filePath)).isFile()) {
+        await storage.bucket(bucketName).upload(filePath, {
+          destination: `auth_state/${file}`,
+          resumable: false,
+        });
+      }
+    }
+    console.log('Estado de autenticación sincronizado con el bucket.');
+  } catch (err) {
+    console.error("Error al subir el estado de autenticación:", err);
+  }
+}
 
-// Inicializa Baileys y gestiona la sesión
-const startBot = async () => {
+// Inicializa Baileys
+async function startBot() {
   connectionStatus = 'initializing';
   latestQR = null;
+  await downloadAuthState();
+  const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-  const sock = makeWASocket({
+  sock = makeWASocket({
+    printQRInTerminal: true,
     auth: state,
-    printQRInTerminal: true, // Útil para debug en la terminal
+    logger: pino({ level: 'silent' }),
     browser: ['HeyManito VM', 'Chrome', '1.0.0'],
   });
 
-  sock.ev.on("connection.update", async (update) => {
+  // Guardar credenciales y subirlas a GCS
+  sock.ev.on('creds.update', async () => {
+    await saveCreds();
+    await uploadAuthState();
+  });
+
+  sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
-    
+
     if (qr) {
-      console.log("Nuevo QR recibido, actualizando...");
+      console.log("Nuevo QR recibido.");
       latestQR = qr;
       connectionStatus = 'qr';
     }
-    
-    if (connection === "open") {
-      connectionStatus = 'connected';
-      latestQR = null; // Limpiamos el QR una vez conectados
-      console.log("✅ WhatsApp conectado!");
-    }
-    
-    if (connection === "close") {
-      const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log(`Conexión cerrada. Causa: ${lastDisconnect?.error}, reconectando: ${shouldReconnect}`);
-      connectionStatus = 'disconnected';
 
+    if (connection === 'open') {
+      connectionStatus = 'connected';
+      console.log('Conectado a WhatsApp');
+      latestQR = null;
+    } else if (connection === 'close') {
+      connectionStatus = 'disconnected';
+      const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log(`Desconectado. Causa: ${lastDisconnect?.error}, reconectando: ${shouldReconnect}`);
       if (shouldReconnect) {
         startBot();
       } else {
-        console.log("Desconexión permanente. Se requiere nuevo escaneo de QR.");
-        // Si la sesión se cierra (logout), limpiamos los archivos para forzar un nuevo QR
-        await clearSession();
-        // Opcional: reiniciar el bot para que genere un nuevo QR inmediatamente
-        startBot();
+        console.log('Desconectado permanentemente, se requiere nuevo QR.');
+        fs.rm(authFolder, { recursive: true, force: true }).catch(err => console.error("Error limpiando auth folder:", err));
       }
     }
   });
 
-  sock.ev.on("creds.update", saveCreds);
+   sock.ev.on('messages.upsert', async (m) => {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return;
 
-  sock.ev.on("messages.upsert", async ({ messages }) => {
-    const msg = messages[0];
-    if (!msg.message || msg.key.fromMe) return;
+        const sender = msg.key.remoteJid;
+        console.log(`Mensaje recibido de: ${sender}`);
+        await sock.sendMessage(sender, { text: 'Hola desde el gateway en la VM!' });
+    });
+}
 
-    // Aquí irá tu lógica de manejo de mensajes en el futuro
-    console.log(`💬 Mensaje recibido de ${msg.key.remoteJid}`);
-    await sock.sendMessage(msg.key.remoteJid, { text: 'Hola desde el gateway en la VM!' });
-  });
-};
+// Endpoints del servidor Express
+app.get('/', (req, res) => res.status(200).send('🚀 WhatsApp Gateway activo en VM'));
+app.get('/_health', (req, res) => res.status(200).send('OK'));
+app.get('/status', (req, res) => res.status(200).json({ status: connectionStatus, qr: latestQR }));
 
-// Endpoint para obtener el estado y el QR
-app.get("/status", (req, res) => {
-  res.status(200).json({ status: connectionStatus, qr: latestQR });
-});
-
-// Endpoint de salud para verificaciones
-app.get("/_health", (req, res) => res.status(200).send("OK"));
-app.get("/", (req, res) => res.status(200).send("🚀 Gateway activo"));
-
-
-app.listen(process.env.PORT || 8080, () => {
-  console.log("🚀 Gateway activo en puerto 8080");
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`🌐 Servidor iniciado en puerto ${port}`);
   startBot();
 });
