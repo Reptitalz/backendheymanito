@@ -7,6 +7,10 @@ import path from "path";
 const app = express();
 app.use(express.json());
 
+// Permitir CORS para que el frontend pueda hacer peticiones
+import cors from 'cors';
+app.use(cors());
+
 const sessionPath = path.join(process.cwd(), "session");
 
 let latestQR = null;
